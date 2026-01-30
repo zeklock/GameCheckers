@@ -1,0 +1,5 @@
+{
+    "dotnet.defaultSolution": "GameCheckers.sln",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true
+}
