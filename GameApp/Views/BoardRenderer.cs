@@ -8,6 +8,7 @@ namespace Checkers.Views
         {
             Console.Clear();
             Console.WriteLine("\nCheckers Board");
+            Console.WriteLine();
 
             int size = board.Cells.GetLength(0);
 
