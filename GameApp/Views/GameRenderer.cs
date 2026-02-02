@@ -8,7 +8,5 @@ public static class GameRenderer
     {
         BoardRenderer.RenderBoard(gameController.GetBoard());
         PlayerInfoRenderer.RenderPlayerPieces(gameController.GetPlayerPieces());
-
-        Console.ReadKey();
     }
 }
