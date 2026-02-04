@@ -7,8 +7,7 @@ namespace Checkers.Views
         public static void RenderBoard(IBoard board)
         {
             Console.Clear();
-            Console.WriteLine("\nCheckers Board");
-            Console.WriteLine();
+            Console.WriteLine("\nCheckers Board\n");
 
             int size = board.Cells.GetLength(0);
 

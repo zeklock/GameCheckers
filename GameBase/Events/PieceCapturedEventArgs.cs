@@ -4,10 +4,12 @@ namespace GameBase.Events;
 
 public class PieceCapturedEventArgs : EventArgs
 {
-    public readonly Piece CapturedPiece;
+    public readonly IPiece CapturedPiece;
+    public readonly Position CapturedPosition;
 
-    public PieceCapturedEventArgs(Piece capturedPiece)
+    public PieceCapturedEventArgs(IPiece capturedPiece, Position capturedPosition)
     {
         CapturedPiece = capturedPiece;
+        CapturedPosition = capturedPosition;
     }
 }

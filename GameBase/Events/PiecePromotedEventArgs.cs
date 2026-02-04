@@ -4,10 +4,12 @@ namespace GameBase.Events;
 
 public class PiecePromotedEventArgs : EventArgs
 {
-    public readonly Piece PromotedPiece;
+    public readonly IPiece PromotedPiece;
+    public readonly Position PromotedPosition;
 
-    public PiecePromotedEventArgs(Piece promotedPiece)
+    public PiecePromotedEventArgs(IPiece promotedPiece, Position promotedPosition)
     {
         PromotedPiece = promotedPiece;
+        PromotedPosition = promotedPosition;
     }
 }
