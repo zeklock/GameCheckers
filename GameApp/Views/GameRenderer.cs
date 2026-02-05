@@ -5,9 +5,9 @@ namespace Checkers.Views;
 
 public static class GameRenderer
 {
-    public static void RenderGame(GameController gameController)
+    public static void Render(GameController gameController)
     {
-        BoardRenderer.RenderBoard(gameController.GetBoard());
+        BoardRenderer.Render(gameController.GetBoard());
         PlayerInfoRenderer.RenderPlayerPieces(gameController.GetPlayerPieces());
     }
 
@@ -86,7 +86,7 @@ public static class GameRenderer
             return "Move (invalid path)";
 
         if (path.Count == 1)
-            return $"Move to ({path[0].X + 1}, {path[0].Y + 1})";
+            return $"Move to ({path[0].X + 1},{path[0].Y + 1})";
 
         // Multi-jump path: "Move to (x,y) -> (x,y) -> ..."
         string result = $"Move to ({path[0].X + 1},{path[0].Y + 1})";

@@ -1,53 +1,53 @@
+using GameBase;
 using GameBase.Models;
 
 namespace Checkers.Views
 {
     public static class BoardRenderer
     {
-        public static void RenderBoard(IBoard board)
+        public static void Render(IBoard board)
         {
             Console.Clear();
             Console.WriteLine("\nCheckers Board\n");
 
             int size = board.Cells.GetLength(0);
+            int centerHeight = CellRenderer.CenterIndex(CellRenderer.Height);
 
-            // Index X
-            for (int x = 0; x < size; x++)
+            for (int h = 0; h < CellRenderer.Height; h++)
             {
-                string indexSpace = x == 0 ? "  " : "";
-                Console.Write($"{indexSpace}  {x + 1} ");
-            }
-            Console.WriteLine();
+                for (int x = 0; x < size; x++)
+                {
+                    if (x == 0)
+                    {
+                        CellRenderer.Row();
+                        Console.Write(" ");
+                    }
 
-            // Border atas
-            for (int x = 0; x < size; x++)
-            {
-                string indexSpace = x == 0 ? "  " : "";
-                Console.Write($"{indexSpace} ___");
+                    if (h == centerHeight)
+                    {
+                        CellRenderer.Row((x + 1).ToString());
+                    }
+                    else
+                    {
+                        CellRenderer.Row();
+                    }
+
+                    Console.Write(" ");
+                }
+
+                Console.WriteLine();
             }
-            Console.WriteLine();
 
             for (int y = 0; y < size; y++)
             {
-                // Baris isi
-                string rowContent = "";
-                for (int x = 0; x < size; x++)
+                for (int h = 0; h < CellRenderer.Height; h++)
                 {
-                    rowContent += x == 0 ? y + 1 + " |" : "|";
-                    rowContent += CellRenderer.RenderCell(board.Cells[x, y]);
+                    for (int x = 0; x < size; x++)
+                    {
+                        CellRenderer.Render(board.Cells[x, y], h);
+                    }
+                    Console.WriteLine("|");
                 }
-                rowContent += "|"; // tutup border kanan
-                Console.WriteLine(rowContent);
-
-                // Baris bawah border
-                string rowBorder = "";
-                for (int x = 0; x < size; x++)
-                {
-                    string indexSpace = x == 0 ? "  " : "";
-                    rowBorder += indexSpace + "|___";
-                }
-                rowBorder += "|";
-                Console.WriteLine(rowBorder);
             }
 
             Console.WriteLine();

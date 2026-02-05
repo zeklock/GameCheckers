@@ -37,7 +37,10 @@ public class GameController
         _currPlayer = players.FirstOrDefault(p => p.Color == Color.Black) ?? players[0];
         _winner = null;
         _playerPieces = new Dictionary<IPlayer, List<IPiece>>();
+    }
 
+    public void PlacePiece()
+    {
         List<int> pieceTopRow = new List<int> { 0, 1, 2 };
         List<int> pieceBottomRow = new List<int> { 5, 6, 7 };
 
@@ -88,6 +91,7 @@ public class GameController
 
     public void Start()
     {
+        PlacePiece();
         InitializePieces();
     }
 
@@ -112,9 +116,10 @@ public class GameController
             return;
         }
 
-        foreach (var player in _players)
+        foreach (Player player in _players)
         {
-            var playerPieces = _playerPieces[player];
+            List<IPiece> playerPieces = _playerPieces[player];
+
             if (playerPieces.Count == 0)
             {
                 IPlayer opponent = _players.First(p => p != player);
@@ -132,17 +137,18 @@ public class GameController
         for (int x = 0; x < BoardSize; x++)
             for (int y = 0; y < BoardSize; y++)
             {
-                var piece = _board.Cells[x, y].Piece;
+                Piece? piece = _board.Cells[x, y].Piece;
+
                 if (piece == null || piece.Color != player.Color)
                     continue;
 
-                var pos = _board.Cells[x, y].Position;
-                var jumps = GetJumpPaths(piece, pos);
+                Position position = _board.Cells[x, y].Position;
+                var jumps = GetJumpPaths(piece, position);
 
                 if (jumps.Count > 0)
-                    jumpCandidates.Add((piece, pos, jumps.Max(p => p.Count)));
-                else if (GetNormalMoves(piece, pos).Count > 0)
-                    normals.Add((piece, pos));
+                    jumpCandidates.Add((piece, position, jumps.Max(p => p.Count)));
+                else if (GetNormalMoves(piece, position).Count > 0)
+                    normals.Add((piece, position));
             }
 
         if (jumpCandidates.Count > 0)
@@ -181,42 +187,42 @@ public class GameController
             .ToList();
     }
 
-    private List<List<Position>> GetJumpPaths(Piece piece, Position start)
+    public List<List<Position>> GetJumpPaths(Piece piece, Position start)
     {
         var result = new List<List<Position>>();
-        ExploreJumpPaths(piece, start, new List<Position>(), result, new HashSet<Position>());
+        ExploreJumps(piece, start, new List<Position>(), result, new HashSet<Position>());
         return result;
     }
 
-    private void ExploreJumpPaths(Piece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited)
+    public void ExploreJumps(Piece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited)
     {
         bool jumped = false;
 
-        foreach (var dir in GetMovementDirections(piece))
+        foreach (Direction dir in GetMovementDirections(piece))
         {
-            Position capture = new Position(currentPos.X + dir.Move.X, currentPos.Y + dir.Move.Y);
-            Position land = new Position(currentPos.X + dir.Jump.X, currentPos.Y + dir.Jump.Y);
+            Position capturePos = new Position(currentPos.X + dir.Move.X, currentPos.Y + dir.Move.Y);
+            Position landPos = new Position(currentPos.X + dir.Jump.X, currentPos.Y + dir.Jump.Y);
 
-            if (!IsInsideBoard(capture) || !IsInsideBoard(land))
+            if (!IsInside(capturePos) || !IsInside(landPos))
                 continue;
 
-            Piece? enemy = _board.Cells[capture.X, capture.Y].Piece;
+            Piece? enemyPiece = GetPiece(capturePos);
 
-            if (enemy == null || enemy.Color == piece.Color)
+            if (enemyPiece == null || enemyPiece.Color == piece.Color)
                 continue;
 
-            if (_board.Cells[land.X, land.Y].Piece != null || visited.Contains(land))
+            if (_board.Cells[landPos.X, landPos.Y].Piece != null || visited.Contains(landPos))
                 continue;
 
             // simulate path locally
-            path.Add(land);
-            visited.Add(land);
+            path.Add(landPos);
+            visited.Add(landPos);
             jumped = true;
 
-            ExploreJumpPaths(piece, land, path, result, visited);
+            ExploreJumps(piece, landPos, path, result, visited);
 
             path.RemoveAt(path.Count - 1);
-            visited.Remove(land);
+            visited.Remove(landPos);
         }
 
         if (!jumped && path.Count > 0)
@@ -226,16 +232,16 @@ public class GameController
     /// <summary>
     /// Gets normal (non-jump) moves from a position.
     /// </summary>
-    private List<Position> GetNormalMoves(Piece piece, Position position)
+    public List<Position> GetNormalMoves(Piece piece, Position position)
     {
-        var moves = new List<Position>();
-        var directions = GetMovementDirections(piece);
+        List<Position> moves = new List<Position>();
+        List<Direction> directions = GetMovementDirections(piece);
 
-        foreach (var direction in directions)
+        foreach (Direction direction in directions)
         {
-            var newPos = new Position(position.X + direction.Move.X, position.Y + direction.Move.Y);
+            Position newPos = new Position(position.X + direction.Move.X, position.Y + direction.Move.Y);
 
-            if (IsInsideBoard(newPos) && _board.Cells[newPos.X, newPos.Y].Piece == null)
+            if (IsInside(newPos) && _board.Cells[newPos.X, newPos.Y].Piece == null)
             {
                 moves.Add(newPos);
             }
@@ -247,7 +253,7 @@ public class GameController
     /// <summary>
     /// Gets the board position of a piece.
     /// </summary>
-    private Position? GetPiecePosition(Piece piece)
+    public Position? GetPiecePosition(Piece piece)
     {
         for (int y = 0; y < BoardSize; y++)
         {
@@ -263,12 +269,17 @@ public class GameController
         return null;
     }
 
+    public Piece? GetPiece(Position position)
+    {
+        return _board.Cells[position.X, position.Y].Piece;
+    }
+
     /// <summary>
     /// Gets the valid movement directions for a piece based on its type and color.
     /// Player1 (at bottom, _players[0]) moves up. Player2 (at top, _players[1]) moves down.
     /// Kings can move in all diagonal directions, Men only forward.
     /// </summary>
-    private List<Direction> GetMovementDirections(Piece piece)
+    public List<Direction> GetMovementDirections(Piece piece)
     {
         if (piece.Type == PieceType.King)
         {
@@ -307,7 +318,7 @@ public class GameController
     /// <summary>
     /// Checks if a position is within board boundaries.
     /// </summary>
-    public static bool IsInsideBoard(Position position)
+    public static bool IsInside(Position position)
     {
         return position.X >= 0 && position.X < BoardSize && position.Y >= 0 && position.Y < BoardSize;
     }
@@ -348,7 +359,7 @@ public class GameController
             Position to = path[i];
             Position? from = GetPiecePosition(piece);
 
-            if (from == null || !IsInsideBoard(to) || _board.Cells[to.X, to.Y].Piece != null)
+            if (from == null || !IsInside(to) || _board.Cells[to.X, to.Y].Piece != null)
                 return;
 
             int deltaX = Math.Abs(to.X - from.Value.X);
@@ -374,7 +385,7 @@ public class GameController
             {
                 Position capturedPos = GetCapturedPiecePosition(from.Value, to);
 
-                if (!IsInsideBoard(capturedPos))
+                if (!IsInside(capturedPos))
                     return;
 
                 Piece? capturedPiece = _board.Cells[capturedPos.X, capturedPos.Y].Piece;
@@ -410,7 +421,7 @@ public class GameController
     /// Validates if a normal (non-jump) move is legal for a piece.
     /// Player1 at bottom moves up (Y decreases). Player2 at top moves down (Y increases).
     /// </summary>
-    private bool IsValidNormalMove(Piece piece, Position from, Position to)
+    public bool IsValidNormalMove(Piece piece, Position from, Position to)
     {
         int deltaX = to.X - from.X;
         int deltaY = to.Y - from.Y;
@@ -438,13 +449,13 @@ public class GameController
         return true;
     }
 
-    private bool PlayerHasAnyJump(IPlayer player)
+    public bool PlayerHasAnyJump(IPlayer player)
     {
         for (int x = 0; x < BoardSize; x++)
         {
             for (int y = 0; y < BoardSize; y++)
             {
-                var piece = _board.Cells[x, y].Piece;
+                Piece? piece = _board.Cells[x, y].Piece;
 
                 if (piece != null && piece.Color == player.Color)
                 {
@@ -460,7 +471,7 @@ public class GameController
     /// <summary>
     /// Gets the position of a captured piece between two diagonal positions.
     /// </summary>
-    private Position GetCapturedPiecePosition(Position from, Position to)
+    public Position GetCapturedPiecePosition(Position from, Position to)
     {
         return new Position((from.X + to.X) / 2, (from.Y + to.Y) / 2);
     }
@@ -470,7 +481,7 @@ public class GameController
     /// Player1 (at bottom) promotes when reaching row 0 (top).
     /// Player2 (at top) promotes when reaching row 7 (bottom).
     /// </summary>
-    private void CheckPromotion(Piece piece, Position position)
+    public void CheckPromotion(Piece piece, Position position)
     {
         if (piece.Type == PieceType.King)
             return;
@@ -478,15 +489,19 @@ public class GameController
         // Player1 promotes at top row
         if (piece.Color == _players[0].Color && position.Y == 0)
         {
-            piece.Type = PieceType.King;
-            OnPiecePromoted(new PiecePromotedEventArgs(piece, position));
+            Promote(piece, position);
         }
         // Player2 promotes at bottom row
         else if (piece.Color == _players[1].Color && position.Y == BoardSize - 1)
         {
-            piece.Type = PieceType.King;
-            OnPiecePromoted(new PiecePromotedEventArgs(piece, position));
+            Promote(piece, position);
         }
+    }
+
+    public void Promote(Piece piece, Position position)
+    {
+        piece.Type = PieceType.King;
+        OnPiecePromoted(new PiecePromotedEventArgs(piece, position));
     }
 
     /// <summary>
@@ -494,11 +509,11 @@ public class GameController
     /// </summary>
     public void RemovePiece(Piece piece)
     {
-        Position? pos = GetPiecePosition(piece);
+        Position? position = GetPiecePosition(piece);
 
-        if (pos != null)
+        if (position != null)
         {
-            _board.Cells[pos.Value.X, pos.Value.Y].Piece = null;
+            _board.Cells[position.Value.X, position.Value.Y].Piece = null;
         }
 
         // Remove from player pieces

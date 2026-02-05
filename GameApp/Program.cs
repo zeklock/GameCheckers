@@ -59,7 +59,7 @@ internal class Program
         while (isGameRunning)
         {
             // Render current game state
-            GameRenderer.RenderGame(gameController);
+            GameRenderer.Render(gameController);
 
             // Get current player info
             IPlayer currentPlayer = gameController.GetCurrentPlayer();
