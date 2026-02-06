@@ -1,4 +1,5 @@
 using GameBase;
+using GameBase.Interfaces;
 using GameBase.Models;
 
 namespace Checkers.Views;
@@ -8,7 +9,7 @@ public static class CellRenderer
     public const int Width = 5;
     public const int Height = 3;
 
-    public static void Render(Cell cell, int heightIndex)
+    public static void Render(ICell cell, int heightIndex)
     {
         int centerRow = CenterIndex(Height);
 

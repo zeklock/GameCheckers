@@ -1,4 +1,6 @@
-namespace GameBase.Models;
+using GameBase.Models;
+
+namespace GameBase.Interfaces;
 
 public interface IPiece
 {

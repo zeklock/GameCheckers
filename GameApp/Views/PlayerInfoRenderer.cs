@@ -1,15 +1,15 @@
-using GameBase.Models;
+using GameBase.Interfaces;
 
 namespace Checkers.Views
 {
     public static class PlayerInfoRenderer
     {
-        public static void RenderPlayerPieces(Dictionary<IPlayer, List<IPiece>> playerPieces)
+        public static void RenderPlayerPieces(IDictionary<IPlayer, IList<IPiece>> playerPieces)
         {
-            foreach (var playerPiece in playerPieces)
+            foreach (KeyValuePair<IPlayer, IList<IPiece>> playerPiece in playerPieces)
             {
                 IPlayer player = playerPiece.Key;
-                List<IPiece> pieces = playerPiece.Value;
+                IList<IPiece> pieces = playerPiece.Value;
                 Console.WriteLine($"{player.Name} ({player.Color}): {pieces.Count} piece(s)");
             }
 

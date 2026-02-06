@@ -1,4 +1,5 @@
 using GameBase;
+using GameBase.Interfaces;
 using GameBase.Models;
 
 namespace Checkers.Views;
@@ -11,15 +12,16 @@ public static class GameRenderer
         PlayerInfoRenderer.RenderPlayerPieces(gameController.GetPlayerPieces());
     }
 
-    public static void SelectPieceAndMove(GameController gameController, List<(Piece piece, Position position)> movablePieces)
+    public static void SelectPieceAndMove(GameController gameController, IList<(IPiece piece, Position position)> movablePieces)
     {
         // Display all movable pieces
         Console.WriteLine("\nAvailable Pieces to Move:");
         for (int i = 0; i < movablePieces.Count; i++)
         {
-            var (piece, pos) = movablePieces[i];
+            IPiece piece = movablePieces[i].piece;
+            Position position = movablePieces[i].position;
             string pieceType = piece.Type == PieceType.Man ? "Man" : "King";
-            Console.WriteLine($"  ({i + 1}) Position ({pos.X + 1},{pos.Y + 1}) - {pieceType}");
+            Console.WriteLine($"  ({i + 1}) Position ({position.X + 1},{position.Y + 1}) - {pieceType}");
         }
 
         // Get piece selection
@@ -32,10 +34,11 @@ public static class GameRenderer
             return;
         }
 
-        var (selectedPiece, selectedPiecePos) = movablePieces[pieceChoice - 1];
+        IPiece selectedPiece = movablePieces[pieceChoice - 1].piece;
+        Position selectedPiecePosition = movablePieces[pieceChoice - 1].position;
 
         // Get legal moves for selected piece
-        List<List<Position>> legalPaths = gameController.GetLegalMoves(selectedPiece);
+        IList<IList<Position>> legalPaths = gameController.GetLegalMoves(selectedPiece);
 
         if (legalPaths.Count == 0)
         {
@@ -45,17 +48,17 @@ public static class GameRenderer
         }
 
         // Display available moves with multi-jump paths
-        DisplayMovesAndExecute(gameController, selectedPiece, selectedPiecePos, legalPaths);
+        DisplayMovesAndExecute(gameController, selectedPiece, selectedPiecePosition, legalPaths);
     }
 
-    public static void DisplayMovesAndExecute(GameController gameController, Piece piece, Position piecePos, List<List<Position>> legalPaths)
+    public static void DisplayMovesAndExecute(GameController gameController, IPiece piece, Position piecePos, IList<IList<Position>> legalPaths)
     {
         Console.WriteLine($"\nAvailable Moves for Piece at ({piecePos.X + 1},{piecePos.Y + 1}):");
         Console.WriteLine($"  (0) Back");
 
         for (int i = 0; i < legalPaths.Count; i++)
         {
-            List<Position> path = legalPaths[i];
+            IList<Position> path = legalPaths[i];
             string moveDescription = FormatMovePath(path);
             Console.WriteLine($"  ({i + 1}) {moveDescription}");
         }
@@ -74,13 +77,13 @@ public static class GameRenderer
         if (moveChoice == 0)
             return;
 
-        List<Position> selectedPath = legalPaths[moveChoice - 1];
+        IList<Position> selectedPath = legalPaths[moveChoice - 1];
 
         // Execute move
         gameController.MovePiece(piece, selectedPath);
     }
 
-    public static string FormatMovePath(List<Position> path)
+    public static string FormatMovePath(IList<Position> path)
     {
         if (path.Count == 0)
             return "Move (invalid path)";

@@ -1,3 +1,5 @@
+using GameBase.Interfaces;
+
 namespace GameBase.Models;
 
 public class Player : IPlayer

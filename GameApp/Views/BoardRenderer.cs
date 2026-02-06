@@ -1,5 +1,4 @@
-using GameBase;
-using GameBase.Models;
+using GameBase.Interfaces;
 
 namespace Checkers.Views
 {
