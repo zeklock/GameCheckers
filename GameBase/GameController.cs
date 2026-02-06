@@ -77,6 +77,8 @@ public class GameController
 
     public void InitializePieces()
     {
+        PlacePiece();
+
         foreach (IPlayer p in _players)
         {
             List<IPiece> pieces = _board.Cells
@@ -91,7 +93,6 @@ public class GameController
 
     public void Start()
     {
-        PlacePiece();
         InitializePieces();
     }
 
@@ -135,6 +136,7 @@ public class GameController
         var normals = new List<(Piece, Position)>();
 
         for (int x = 0; x < BoardSize; x++)
+        {
             for (int y = 0; y < BoardSize; y++)
             {
                 Piece? piece = _board.Cells[x, y].Piece;
@@ -150,6 +152,7 @@ public class GameController
                 else if (GetNormalMoves(piece, position).Count > 0)
                     normals.Add((piece, position));
             }
+        }
 
         if (jumpCandidates.Count > 0)
         {
