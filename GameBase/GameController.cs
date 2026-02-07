@@ -1,4 +1,7 @@
-﻿using GameBase.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using GameBase.Models;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Dtos;
@@ -202,11 +205,11 @@ public class GameController
     public List<List<Position>> GetJumpPaths(IPiece piece, Position start)
     {
         List<List<Position>> result = new List<List<Position>>();
-        ExploreJumps(piece, start, new List<Position>(), result, new HashSet<Position>());
+        ExploreJumps(piece, start, new List<Position>(), result, new HashSet<Position>(), new HashSet<Position>());
         return result;
     }
 
-    public void ExploreJumps(IPiece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited)
+    public void ExploreJumps(IPiece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited, HashSet<Position> captured)
     {
         bool jumped = false;
         IEnumerable<Direction> directions = GetMovementDirections(piece);
@@ -222,21 +225,31 @@ public class GameController
             IPiece? capturePiece = GetPiece(capturePos);
             IPiece? landPiece = GetPiece(landPos);
 
+            // ignore already-captured pieces
             if (capturePiece == null || capturePiece.Color == piece.Color)
                 continue;
+
+            if (captured.Contains(capturePos))
+                continue;
+
+            // Treat the moving piece as not blocking landing squares (it will be moved during simulation)
+            if (landPiece != null && landPiece == piece)
+                landPiece = null;
 
             if (landPiece != null || visited.Contains(landPos))
                 continue;
 
-            // simulate path locally
+            // simulate path locally: record landing and captured positions
             path.Add(landPos);
             visited.Add(landPos);
+            captured.Add(capturePos);
             jumped = true;
 
-            ExploreJumps(piece, landPos, path, result, visited);
+            ExploreJumps(piece, landPos, path, result, visited, captured);
 
             path.RemoveAt(path.Count - 1);
             visited.Remove(landPos);
+            captured.Remove(capturePos);
         }
 
         if (!jumped && path.Count > 0)
