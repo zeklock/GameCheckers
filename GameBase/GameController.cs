@@ -1,6 +1,7 @@
 ﻿using GameBase.Models;
 using GameBase.Events;
 using GameBase.Interfaces;
+using GameBase.Dtos;
 
 namespace GameBase;
 
@@ -8,10 +9,10 @@ public class GameController
 {
     public const int BoardSize = 8;
     private IBoard _board;
-    private IList<IPlayer> _players;
+    private List<IPlayer> _players;
     private IPlayer _currPlayer;
     private IPlayer? _winner;
-    private IDictionary<IPlayer, IList<IPiece>> _playerPieces;
+    private Dictionary<IPlayer, List<IPiece>> _playerPieces;
     public event EventHandler<PieceCapturedEventArgs>? PieceCaptured;
     public event EventHandler<PiecePromotedEventArgs>? PiecePromoted;
     public event EventHandler<TurnChangedEventArgs>? TurnChanged;
@@ -31,19 +32,19 @@ public class GameController
         TurnChanged?.Invoke(this, e);
     }
 
-    public GameController(IBoard board, IList<IPlayer> players)
+    public GameController(IBoard board, List<IPlayer> players)
     {
         _board = board;
         _players = players;
         _currPlayer = players.FirstOrDefault(p => p.Color == Color.Black) ?? players[0];
         _winner = null;
-        _playerPieces = new Dictionary<IPlayer, IList<IPiece>>();
+        _playerPieces = new Dictionary<IPlayer, List<IPiece>>();
     }
 
     public void PlacePiece()
     {
-        IList<int> pieceTopRow = new List<int> { 0, 1, 2 };
-        IList<int> pieceBottomRow = new List<int> { 5, 6, 7 };
+        List<int> pieceTopRow = new List<int> { 0, 1, 2 };
+        List<int> pieceBottomRow = new List<int> { 5, 6, 7 };
 
         for (int y = 0; y < BoardSize; y++)
         {
@@ -82,7 +83,7 @@ public class GameController
 
         foreach (IPlayer p in _players)
         {
-            IList<IPiece> pieces = _board.Cells
+            List<IPiece> pieces = _board.Cells
                 .Cast<ICell>()
                 .Where(c => c.Piece != null && c.Piece.Color == p.Color)
                 .Select(c => c.Piece!)
@@ -105,11 +106,11 @@ public class GameController
 
     public IPlayer? GetWinner() => _winner;
 
-    public IDictionary<IPlayer, IList<IPiece>> GetPlayerPieces() => _playerPieces;
+    public Dictionary<IPlayer, List<IPiece>> GetPlayerPieces() => _playerPieces;
 
     public void CheckWin()
     {
-        IList<(IPiece piece, Position position)> movablePieces = GetMovablePieces(_currPlayer);
+        List<MovablePieceDto> movablePieces = GetMovablePieces(_currPlayer);
 
         if (movablePieces.Count == 0)
         {
@@ -120,7 +121,7 @@ public class GameController
 
         foreach (IPlayer player in _players)
         {
-            IList<IPiece> playerPieces = _playerPieces[player];
+            List<IPiece> playerPieces = _playerPieces[player];
 
             if (playerPieces.Count == 0)
             {
@@ -131,76 +132,81 @@ public class GameController
         }
     }
 
-    public IList<(IPiece piece, Position position)> GetMovablePieces(IPlayer player)
+    public List<MovablePieceDto> GetMovablePieces(IPlayer player)
     {
-        IList<(IPiece piece, Position pos, int jumpLen)> jumpCandidates = new List<(IPiece piece, Position pos, int jumpLen)>();
-        IList<(IPiece, Position)> normals = new List<(IPiece, Position)>();
+        List<MovablePieceDto> jumpPieceMoves = new List<MovablePieceDto>();
+        List<MovablePieceDto> normalPieceMoves = new List<MovablePieceDto>();
 
         for (int x = 0; x < BoardSize; x++)
         {
             for (int y = 0; y < BoardSize; y++)
             {
-                IPiece? piece = _board.Cells[x, y].Piece;
+                Position position = new Position(x, y);
+                IPiece? piece = GetPiece(position);
 
                 if (piece == null || piece.Color != player.Color)
                     continue;
 
-                Position position = _board.Cells[x, y].Position;
-                IList<IList<Position>> jumps = GetJumpPaths(piece, position);
+                List<List<Position>> jumpPaths = GetJumpPaths(piece, position);
+                List<Position> normalMoves = GetNormalMoves(piece, position);
 
-                if (jumps.Count > 0)
-                    jumpCandidates.Add((piece, position, jumps.Max(p => p.Count)));
-                else if (GetNormalMoves(piece, position).Count() > 0)
-                    normals.Add((piece, position));
+                if (jumpPaths.Count > 0)
+                    jumpPieceMoves.Add(new MovablePieceDto { Piece = piece, Position = position, JumpLen = jumpPaths.Max(p => p.Count) });
+                else if (normalMoves.Count > 0)
+                    normalPieceMoves.Add(new MovablePieceDto { Piece = piece, Position = position });
             }
         }
 
-        if (jumpCandidates.Count > 0)
+        if (jumpPieceMoves.Count > 0)
         {
-            int max = jumpCandidates.Max(j => j.jumpLen);
-            return jumpCandidates
-                .Where(j => j.jumpLen == max)
-                .Select(j => (j.piece, j.pos))
+            int maxJumpPiece = jumpPieceMoves.Max(j => j.JumpLen);
+            List<MovablePieceDto> maxJumpPieceMoves = jumpPieceMoves
+                .Where(j => j.JumpLen == maxJumpPiece)
                 .ToList();
+
+            return maxJumpPieceMoves;
         }
 
-        return normals;
+        return normalPieceMoves;
     }
 
     /// <summary>
     /// Gets all legal moves for a piece (normal moves and all jump sequences).
     /// Returns List of Paths (multi-jump possible)
     /// </summary>
-    public IList<IList<Position>> GetLegalMoves(IPiece piece)
+    public List<List<Position>> GetLegalMoves(IPiece piece)
     {
-        Position? start = GetPiecePosition(piece);
-        if (start == null)
-            return new List<IList<Position>>();
+        List<List<Position>> legalMoves = new List<List<Position>>();
+        Position? startPosition = GetPiecePosition(piece);
 
-        IList<IList<Position>> jumpPaths = GetJumpPaths(piece, start.Value);
+        if (startPosition == null)
+            return legalMoves;
+
+        List<List<Position>> jumpPaths = GetJumpPaths(piece, startPosition.Value);
 
         // FORCED JUMP
         if (jumpPaths.Count > 0)
         {
-            int max = jumpPaths.Max(p => p.Count);
-            return jumpPaths.Where(p => p.Count == max).ToList();
+            int maxJumpPath = jumpPaths.Max(p => p.Count);
+            List<List<Position>> jumpMoves = jumpPaths.Where(p => p.Count == maxJumpPath).ToList();
+            return jumpMoves;
         }
 
-        IList<IList<Position>> legalMoves = GetNormalMoves(piece, start.Value)
-            .Select(p => (IList<Position>)new List<Position> { p })
+        List<List<Position>> normalMoves = GetNormalMoves(piece, startPosition.Value)
+            .Select(p => new List<Position> { p })
             .ToList();
 
-        return legalMoves;
+        return normalMoves;
     }
 
-    public IList<IList<Position>> GetJumpPaths(IPiece piece, Position start)
+    public List<List<Position>> GetJumpPaths(IPiece piece, Position start)
     {
-        IList<IList<Position>> result = new List<IList<Position>>();
+        List<List<Position>> result = new List<List<Position>>();
         ExploreJumps(piece, start, new List<Position>(), result, new HashSet<Position>());
         return result;
     }
 
-    public void ExploreJumps(IPiece piece, Position currentPos, IList<Position> path, IList<IList<Position>> result, HashSet<Position> visited)
+    public void ExploreJumps(IPiece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited)
     {
         bool jumped = false;
         IEnumerable<Direction> directions = GetMovementDirections(piece);
@@ -213,12 +219,13 @@ public class GameController
             if (!IsInside(capturePos) || !IsInside(landPos))
                 continue;
 
-            IPiece? enemyPiece = GetPiece(capturePos);
+            IPiece? capturePiece = GetPiece(capturePos);
+            IPiece? landPiece = GetPiece(landPos);
 
-            if (enemyPiece == null || enemyPiece.Color == piece.Color)
+            if (capturePiece == null || capturePiece.Color == piece.Color)
                 continue;
 
-            if (_board.Cells[landPos.X, landPos.Y].Piece != null || visited.Contains(landPos))
+            if (landPiece != null || visited.Contains(landPos))
                 continue;
 
             // simulate path locally
@@ -239,18 +246,18 @@ public class GameController
     /// <summary>
     /// Gets normal (non-jump) moves from a position.
     /// </summary>
-    public IList<Position> GetNormalMoves(IPiece piece, Position position)
+    public List<Position> GetNormalMoves(IPiece piece, Position position)
     {
-        IList<Position> moves = new List<Position>();
+        List<Position> moves = new List<Position>();
         IEnumerable<Direction> directions = GetMovementDirections(piece);
 
         foreach (Direction direction in directions)
         {
-            Position newPos = new Position(position.X + direction.Move.X, position.Y + direction.Move.Y);
+            Position newPosition = new Position(position.X + direction.Move.X, position.Y + direction.Move.Y);
 
-            if (IsInside(newPos) && _board.Cells[newPos.X, newPos.Y].Piece == null)
+            if (IsInside(newPosition) && _board.Cells[newPosition.X, newPosition.Y].Piece == null)
             {
-                moves.Add(newPos);
+                moves.Add(newPosition);
             }
         }
 
@@ -266,9 +273,12 @@ public class GameController
         {
             for (int x = 0; x < BoardSize; x++)
             {
-                if (_board.Cells[x, y].Piece == piece)
+                ICell cell = _board.Cells[x, y];
+
+                if (cell.Piece == piece)
                 {
-                    return _board.Cells[x, y].Position;
+                    Position piecePosition = cell.Position;
+                    return piecePosition;
                 }
             }
         }
@@ -286,40 +296,40 @@ public class GameController
     /// Player1 (at bottom, _players[0]) moves up. Player2 (at top, _players[1]) moves down.
     /// Kings can move in all diagonal directions, Men only forward.
     /// </summary>
-    public IEnumerable<Direction> GetMovementDirections(IPiece piece)
+    public List<Direction> GetMovementDirections(IPiece piece)
     {
+        List<Direction> directions = new List<Direction>();
+
         if (piece.Type == PieceType.King)
         {
-            return new List<Direction>
+            directions.AddRange(new List<Direction>
             {
                 Direction.TopLeft,
                 Direction.TopRight,
                 Direction.BottomLeft,
-                Direction.BottomRight,
-            };
+                Direction.BottomRight
+            });
         }
         else if (piece.Color == _players.First().Color)
         {
             // Player1 at bottom moves up (toward Y=0)
-            return new List<Direction>
+            directions.AddRange(new List<Direction>
             {
                 Direction.TopLeft,
                 Direction.TopRight
-            };
+            });
         }
         else if (piece.Color == _players.Last().Color)
         {
             // Player2 at top moves down (toward Y=7)
-            return new List<Direction>
+            directions.AddRange(new List<Direction>
             {
                 Direction.BottomLeft,
-                Direction.BottomRight,
-            };
+                Direction.BottomRight
+            });
         }
-        else
-        {
-            return new List<Direction>();
-        }
+
+        return directions;
     }
 
     /// <summary>
@@ -343,13 +353,15 @@ public class GameController
     /// Moves a piece following a sequence of positions (multi-jump moves).
     /// Validates piece ownership, existence, and path legality before executing moves.
     /// </summary>
-    public void MovePiece(IPiece piece, IList<Position> path)
+    public void MovePiece(IPiece piece, List<Position> path)
     {
         if (path == null || path.Count == 0)
             return;
 
         // Validate piece exists on board
-        if (GetPiecePosition(piece) == null)
+        Position? piecePosition = GetPiecePosition(piece);
+
+        if (piecePosition == null)
             return;
 
         // Validate piece belongs to current player
@@ -357,59 +369,63 @@ public class GameController
             return;
 
         // Validate path is legal for this piece
-        IList<IList<Position>> legalPaths = GetLegalMoves(piece);
-        if (!legalPaths.Any(p => p.SequenceEqual(path)))
+        List<List<Position>> legalMoves = GetLegalMoves(piece);
+
+        if (!legalMoves.Any(p => p.SequenceEqual(path)))
             return;
+
+        int deltaMove = 1;
+        int deltaJump = 2;
 
         for (int i = 0; i < path.Count; i++)
         {
-            Position to = path[i];
-            Position? from = GetPiecePosition(piece);
+            Position pathTo = path[i];
+            Position? pathFrom = GetPiecePosition(piece);
+            IPiece? pieceTo = GetPiece(pathTo);
 
-            if (from == null || !IsInside(to) || _board.Cells[to.X, to.Y].Piece != null)
+            if (pathFrom == null || !IsInside(pathTo) || pieceTo != null)
                 return;
 
-            int deltaX = Math.Abs(to.X - from.Value.X);
-            int deltaY = Math.Abs(to.Y - from.Value.Y);
+            int deltaX = Math.Abs(pathTo.X - pathFrom.Value.X);
+            int deltaY = Math.Abs(pathTo.Y - pathFrom.Value.Y);
 
             // Normal move (one diagonal square) - only allowed if it's the only step
-            if (deltaX == 1 && deltaY == 1)
+            if (deltaX == deltaMove && deltaY == deltaMove)
             {
-                if (!IsValidNormalMove(piece, from.Value, to))
+                if (!IsValidNormalMove(piece, pathFrom.Value, pathTo))
                     return;
 
                 if (path.Count > 1)
                     return; // invalid: normal move cannot be part of multi-step path
 
-                _board.Cells[from.Value.X, from.Value.Y].Piece = null;
-                _board.Cells[to.X, to.Y].Piece = piece;
-                CheckPromotion(piece, to);
+                _board.Cells[pathFrom.Value.X, pathFrom.Value.Y].Piece = null;
+                _board.Cells[pathTo.X, pathTo.Y].Piece = piece;
+                CheckPromotion(piece, pathTo);
                 SwitchPlayer();
                 return;
             }
             // Jump move (two diagonal squares)
-            else if (deltaX == 2 && deltaY == 2)
+            else if (deltaX == deltaJump && deltaY == deltaJump)
             {
-                Position capturedPos = GetCapturedPiecePosition(from.Value, to);
+                Position capturedPosition = GetCapturedPiecePosition(pathFrom.Value, pathTo);
 
-                if (!IsInside(capturedPos))
+                if (!IsInside(capturedPosition))
                     return;
 
-                IPiece? capturedPiece = _board.Cells[capturedPos.X, capturedPos.Y].Piece;
-                Position capturedPosition = _board.Cells[capturedPos.X, capturedPos.Y].Position;
+                IPiece? capturedPiece = GetPiece(capturedPosition);
 
                 if (capturedPiece == null || capturedPiece.Color == piece.Color)
                     return;
 
-                _board.Cells[from.Value.X, from.Value.Y].Piece = null;
-                _board.Cells[to.X, to.Y].Piece = piece;
+                _board.Cells[pathFrom.Value.X, pathFrom.Value.Y].Piece = null;
+                _board.Cells[pathTo.X, pathTo.Y].Piece = piece;
                 RemovePiece(capturedPiece);
                 OnPieceCaptured(new PieceCapturedEventArgs(capturedPiece, capturedPosition));
 
                 // If this is the last step in the provided path, finish turn
                 if (i == path.Count - 1)
                 {
-                    CheckPromotion(piece, to);
+                    CheckPromotion(piece, pathTo);
                     SwitchPlayer();
                     return;
                 }
@@ -462,11 +478,14 @@ public class GameController
         {
             for (int y = 0; y < BoardSize; y++)
             {
-                IPiece? piece = _board.Cells[x, y].Piece;
+                Position position = new Position(x, y);
+                IPiece? piece = GetPiece(position);
 
                 if (piece != null && piece.Color == player.Color)
                 {
-                    if (GetJumpPaths(piece, _board.Cells[x, y].Position).Count > 0)
+                    List<List<Position>> jumpPaths = GetJumpPaths(piece, position);
+
+                    if (jumpPaths.Count > 0)
                         return true;
                 }
             }
@@ -524,7 +543,7 @@ public class GameController
         }
 
         // Remove from player pieces
-        foreach (KeyValuePair<IPlayer, IList<IPiece>> playerPiece in _playerPieces)
+        foreach (KeyValuePair<IPlayer, List<IPiece>> playerPiece in _playerPieces)
         {
             playerPiece.Value.Remove(piece);
         }

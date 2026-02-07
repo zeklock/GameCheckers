@@ -1,5 +1,6 @@
 ﻿using Checkers.Views;
 using GameBase;
+using GameBase.Dtos;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Models;
@@ -42,7 +43,7 @@ internal class Program
         }
 
         IBoard board = new Board(GameController.BoardSize);
-        IList<IPlayer> players = new List<IPlayer>
+        List<IPlayer> players = new List<IPlayer>
         {
             new Player(_combinationChoice == 1 ? Color.Black : Color.White, "Player 1"),
             new Player(_combinationChoice == 1 ? Color.White : Color.Black, "Player 2")
@@ -78,7 +79,7 @@ internal class Program
             }
 
             // Get all pieces the current player can move
-            IList<(IPiece piece, Position position)> movablePieces = gameController.GetMovablePieces(currentPlayer);
+            List<MovablePieceDto> movablePieces = gameController.GetMovablePieces(currentPlayer);
 
             if (movablePieces.Count == 0)
             {
