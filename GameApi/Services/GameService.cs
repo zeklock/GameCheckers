@@ -12,7 +12,6 @@ namespace GameApi.Services;
 public class GameService : IGameService
 {
     private readonly GameStore _store;
-    private readonly object _lock = new();
 
     public GameService(GameStore store)
     {
@@ -21,36 +20,31 @@ public class GameService : IGameService
 
     public Result<GameDto> Start(List<PlayerDto> playerDtos)
     {
-        lock (_lock)
-        {
-            if (playerDtos.Count != 2)
-                return Result<GameDto>.Failure("Invalid number of players");
+        if (playerDtos.Count != 2)
+            return Result<GameDto>.Failure("Invalid number of players");
 
-            if (string.IsNullOrEmpty(playerDtos[0].Name))
-                return Result<GameDto>.Failure("Invalid name for Player 1");
+        if (string.IsNullOrEmpty(playerDtos[0].Name))
+            return Result<GameDto>.Failure("Invalid name for Player 1");
 
-            if (string.IsNullOrEmpty(playerDtos[1].Name))
-                return Result<GameDto>.Failure("Invalid name for Player 2");
+        if (string.IsNullOrEmpty(playerDtos[1].Name))
+            return Result<GameDto>.Failure("Invalid name for Player 2");
 
-            if (playerDtos[0].Name == playerDtos[1].Name)
-                return Result<GameDto>.Failure("Players must have different names");
+        if (playerDtos[0].Name == playerDtos[1].Name)
+            return Result<GameDto>.Failure("Players must have different names");
 
-            if (!Enum.TryParse<Color>(playerDtos[0].Color, true, out var color1)
-                || !Enum.IsDefined(typeof(Color), color1))
-                return Result<GameDto>.Failure("Invalid color for Player 1");
+        if (!Enum.IsDefined(typeof(Color), playerDtos[0].Color))
+            return Result<GameDto>.Failure("Invalid color for Player 1");
 
-            if (!Enum.TryParse<Color>(playerDtos[1].Color, true, out var color2)
-                || !Enum.IsDefined(typeof(Color), color2))
-                return Result<GameDto>.Failure("Invalid color for Player 2");
+        if (!Enum.IsDefined(typeof(Color), playerDtos[1].Color))
+            return Result<GameDto>.Failure("Invalid color for Player 2");
 
-            if (color1 == color2)
-                return Result<GameDto>.Failure("Players must have different colors");
+        if (playerDtos[0].Color == playerDtos[1].Color)
+            return Result<GameDto>.Failure("Players must have different colors");
 
-            NewGame(playerDtos, color1, color2);
-            UpdateGameState();
+        NewGame(playerDtos);
+        UpdateGameState();
 
-            return Result<GameDto>.Success(_store.GameDto);
-        }
+        return Result<GameDto>.Success(_store.GameDto);
     }
 
     public Result<List<List<PositionDto>>> GetAvailableMoves(PositionDto positionDto)
@@ -97,17 +91,14 @@ public class GameService : IGameService
         if (!_store.Game.IsValidLegalMove(piece, path))
             return Result<GameDto>.Failure("Invalid move");
 
-        lock (_lock)
-        {
-            _store.GameDto.Notifications.Clear();
-            _store.Game.MovePiece(piece, path);
-            UpdateGameState();
-        }
+        _store.GameDto.Notifications.Clear();
+        _store.Game.MovePiece(piece, path);
+        UpdateGameState();
 
         return Result<GameDto>.Success(_store.GameDto);
     }
 
-    private void NewGame(List<PlayerDto> playerDtos, Color color1, Color color2)
+    private void NewGame(List<PlayerDto> playerDtos)
     {
         if (_store.Game != null)
         {
@@ -119,8 +110,8 @@ public class GameService : IGameService
         IBoard board = new Board(GameController.BoardSize);
         List<IPlayer> players = new List<IPlayer>
         {
-            new Player(color1, playerDtos[0].Name),
-            new Player(color2, playerDtos[1].Name)
+            new Player(playerDtos[0].Color, playerDtos[0].Name),
+            new Player(playerDtos[1].Color, playerDtos[1].Name)
         };
 
         _store.Game = new GameController(board, players);
@@ -147,15 +138,15 @@ public class GameService : IGameService
         PlayerDto? winner = gameWinner == null ? null : new PlayerDto
         {
             Name = gameWinner.Name,
-            Color = gameWinner.Color.ToString()
+            Color = gameWinner.Color
         };
 
         List<PlayerDto> players = _store.Game.GetPlayers()
-            .Select(p => new PlayerDto { Name = p.Name, Color = p.Color.ToString() }).ToList();
+            .Select(p => new PlayerDto { Name = p.Name, Color = p.Color }).ToList();
         PlayerDto currentPlayer = new PlayerDto
         {
             Name = _store.Game.GetCurrentPlayer().Name,
-            Color = _store.Game.GetCurrentPlayer().Color.ToString()
+            Color = _store.Game.GetCurrentPlayer().Color
         };
 
         List<MovablePieceDto> movablePieces = _store.Game.GetMovablePieces(_store.Game.GetCurrentPlayer());
@@ -170,7 +161,7 @@ public class GameService : IGameService
         _store.GameDto.Players = players;
         _store.GameDto.CurrentPlayer = currentPlayer;
         _store.GameDto.Winner = winner;
-        _store.GameDto.AvailableMoves = availablePieces;
+        _store.GameDto.AvailablePieces = availablePieces;
     }
 
     private BoardDto BoardMapper()
@@ -210,28 +201,19 @@ public class GameService : IGameService
 
     private void game_PieceCaptured(object? sender, PieceCapturedEventArgs e)
     {
-        lock (_lock)
-        {
-            string notification = $"Piece Captured! {e.CapturedPiece.Color} {e.CapturedPiece.Type} ({e.CapturedPosition.X + 1},{e.CapturedPosition.Y + 1}) was removed from the board.";
-            _store.GameDto.Notifications.Add(notification);
-        }
+        string notification = $"Piece Captured! {e.CapturedPiece.Color} {e.CapturedPiece.Type} ({e.CapturedPosition.X + 1},{e.CapturedPosition.Y + 1}) was removed from the board.";
+        _store.GameDto.Notifications.Add(notification);
     }
 
     private void game_PiecePromoted(object? sender, PiecePromotedEventArgs e)
     {
-        lock (_lock)
-        {
-            string notification = $"Piece Promoted! {e.PromotedPiece.Color} piece ({e.PromotedPosition.X + 1},{e.PromotedPosition.Y + 1}) has become a King!";
-            _store.GameDto.Notifications.Add(notification);
-        }
+        string notification = $"Piece Promoted! {e.PromotedPiece.Color} piece ({e.PromotedPosition.X + 1},{e.PromotedPosition.Y + 1}) has become a King!";
+        _store.GameDto.Notifications.Add(notification);
     }
 
     private void game_TurnChanged(object? sender, TurnChangedEventArgs e)
     {
-        lock (_lock)
-        {
-            string notification = $"Turn switched to {e.CurrentPlayer.Name} ({e.CurrentPlayer.Color})";
-            _store.GameDto.Notifications.Add(notification);
-        }
+        string notification = $"Turn switched to {e.CurrentPlayer.Name} ({e.CurrentPlayer.Color})";
+        _store.GameDto.Notifications.Add(notification);
     }
 }

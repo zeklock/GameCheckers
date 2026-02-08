@@ -6,6 +6,6 @@ public class GameDto
     public List<PlayerDto>? Players { get; set; }
     public PlayerDto? CurrentPlayer { get; set; }
     public PlayerDto? Winner { get; set; }
-    public List<AvailablePieceDto>? AvailableMoves { get; set; } = new List<AvailablePieceDto>();
+    public List<AvailablePieceDto>? AvailablePieces { get; set; } = new List<AvailablePieceDto>();
     public List<string> Notifications { get; set; } = new List<string>();
 }

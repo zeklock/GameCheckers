@@ -14,7 +14,22 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<GameStore>();
 builder.Services.AddScoped<IGameService, GameService>();
 
+// CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("GameWeb", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
+
+// Use CORS
+app.UseCors("GameWeb");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
