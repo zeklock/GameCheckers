@@ -105,6 +105,8 @@ public class GameController
 
     public IBoard GetBoard() => _board;
 
+    public List<IPlayer> GetPlayers() => _players;
+
     public IPlayer GetCurrentPlayer() => _currPlayer;
 
     public IPlayer? GetWinner() => _winner;
@@ -382,9 +384,7 @@ public class GameController
             return;
 
         // Validate path is legal for this piece
-        List<List<Position>> legalMoves = GetLegalMoves(piece);
-
-        if (!legalMoves.Any(p => p.SequenceEqual(path)))
+        if (!IsValidLegalMove(piece, path))
             return;
 
         int deltaMove = 1;
@@ -451,6 +451,16 @@ public class GameController
                 return; // invalid step
             }
         }
+    }
+
+    public bool IsValidLegalMove(IPiece piece, List<Position> path)
+    {
+        List<List<Position>> legalMoves = GetLegalMoves(piece);
+
+        if (!legalMoves.Any(p => p.SequenceEqual(path)))
+            return false;
+
+        return true;
     }
 
     /// <summary>
