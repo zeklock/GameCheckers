@@ -21,6 +21,8 @@ export default function Game() {
   const [paths, setPaths] = useState<Record<string, PositionDto[]>>({});
   const [selectablePieces, setSelectablePieces] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [showNotif, setShowNotif] = useState(false);
+  const [showError, setShowError] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("currentGame");
@@ -44,6 +46,7 @@ export default function Game() {
       navigate("/");
     } finally {
       setLoading(false);
+      setShowNotif(true);
     }
   }, [navigate]);
 
@@ -52,6 +55,22 @@ export default function Game() {
       navigate("/game-over");
     }
   }, [game, navigate]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowNotif(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showNotif]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowError(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [showError]);
 
   const onCellClick = async (pos: PositionDto) => {
     if (!game || !game.board?.cells) return;
@@ -79,8 +98,10 @@ export default function Game() {
         setSelectablePieces(
           (newGame.availablePieces ?? []).map((p) => keyFor(p.position)),
         );
+        setShowNotif(true);
       } catch (err: any) {
         setError(err.message || "Invalid move");
+        setShowError(true);
       }
       return;
     }
@@ -98,6 +119,7 @@ export default function Game() {
 
     if (cell.piece.color !== game.currentPlayer.color) {
       setError("Not your piece");
+      setShowError(true);
       return;
     }
 
@@ -107,6 +129,7 @@ export default function Game() {
       )
     ) {
       setError("This piece cannot move");
+      setShowError(true);
       return;
     }
 
@@ -123,6 +146,7 @@ export default function Game() {
       setPaths(map);
     } catch (err: any) {
       setError(err.message || "No available moves");
+      setShowError(true);
     }
   };
 
@@ -200,6 +224,46 @@ export default function Game() {
           </div>
         </div>
 
+        {/* Notifications */}
+        {game.notifications?.length > 0 && (
+          <div
+            className={`fixed top-8 right-8 z-10 max-w-2xl mx-auto rounded-xl border border-gray-700/50 p-6
+            transition-all duration-300 ease-in-out
+            ${
+              showNotif
+                ? "opacity-100 translate-y-0 bg-[rgb(245,222,179)] backdrop-blur-sm"
+                : "opacity-0 -translate-y-2 pointer-events-none"
+            }`}
+          >
+            <h3 className="text-lg font-semibold text-black mb-3">
+              Notifications
+            </h3>
+            <ul className="space-y-2 text-gray-800 text-sm">
+              {game.notifications.map((n, i) => (
+                <li key={i} className="flex items-start">
+                  <span className="text-indigo-400 mr-2">•</span>
+                  {n}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div
+            className={`fixed bottom-8 right-8 z-10 max-w-md mx-auto text-center text-red-400 text-sm font-medium py-3 px-6 rounded-xl border border-red-800/50
+            transition-all duration-300 ease-in-out
+            ${
+              showError
+                ? "opacity-100 translate-y-0 bg-red-900/30"
+                : "opacity-0 -translate-y-2 pointer-events-none"
+            }`}
+          >
+            {error}
+          </div>
+        )}
+
         {/* Board Container */}
         <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/60 p-6 md:p-10 mb-8">
           <div className="flex justify-center">
@@ -213,30 +277,6 @@ export default function Game() {
             />
           </div>
         </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="max-w-md mx-auto mb-6 text-center text-red-400 text-sm font-medium bg-red-900/30 py-3 px-6 rounded-xl border border-red-800/50">
-            {error}
-          </div>
-        )}
-
-        {/* Notifications */}
-        {game.notifications?.length > 0 && (
-          <div className="max-w-2xl mx-auto mb-8 bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6">
-            <h3 className="text-lg font-semibold text-white mb-3">
-              Notifications
-            </h3>
-            <ul className="space-y-2 text-gray-300 text-sm">
-              {game.notifications.map((n, i) => (
-                <li key={i} className="flex items-start">
-                  <span className="text-indigo-400 mr-2">•</span>
-                  {n}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* Back Button */}
         <div className="text-center">
