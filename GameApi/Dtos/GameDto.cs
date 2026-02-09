@@ -1,3 +1,5 @@
+using GameBase.Enums;
+
 namespace GameApi.Dtos;
 
 public class GameDto
@@ -8,4 +10,5 @@ public class GameDto
     public PlayerDto? Winner { get; set; }
     public List<AvailablePieceDto>? AvailablePieces { get; set; } = new List<AvailablePieceDto>();
     public List<string> Notifications { get; set; } = new List<string>();
+    public List<Status> Status { get; set; } = new List<Status>();
 }

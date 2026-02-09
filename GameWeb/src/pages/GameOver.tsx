@@ -1,37 +1,45 @@
 import { useEffect, useState } from "react";
-import { Color, type GameDto } from "../types/game";
+import { Color, PieceType, type GameDto } from "../types/game";
 import { useNavigate } from "react-router-dom";
+import { gameApi } from "../api/gameApi";
+import Button from "../components/Button";
+import Cell from "../components/Cell";
 
 export default function GameOver() {
   const [game, setGame] = useState<GameDto | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const saved = localStorage.getItem("currentGame");
-    if (!saved) {
-      navigate("/");
-      return;
-    }
+    const load = async () => {
+      try {
+        const game = (await gameApi.state()) as GameDto;
 
-    try {
-      setGame(JSON.parse(saved));
-    } catch {
-      localStorage.removeItem("currentGame");
-      navigate("/");
-    }
+        if (!game.board) {
+          navigate("/");
+          return;
+        }
+
+        if (game.availablePieces.length > 0) {
+          navigate("/game");
+          return;
+        }
+
+        setGame(game);
+      } catch {
+        navigate("/");
+      }
+    };
+
+    load();
   }, [navigate]);
 
-  if (!game) {
-    return null;
-  }
-
-  if (game.availablePieces.length > 0) {
-    navigate("/game");
+  const onGameOver = () => {
+    navigate("/");
     return;
-  }
+  };
 
-  const winnerName = game.winner?.name;
-  const winnerColor = game.winner
+  const winnerName = game?.winner?.name;
+  const winnerColor = game?.winner
     ? game.winner.color === Color.Black
       ? "Black"
       : "White"
@@ -62,7 +70,18 @@ export default function GameOver() {
               </div>
 
               {/* Trophy-like accent */}
-              <div className="text-6xl md:text-7xl opacity-80">🏆</div>
+              <div className="flex items-center justify-center mt-4">
+                <Cell
+                  cell={{
+                    position: { x: 0, y: 0 },
+                    piece: {
+                      color:
+                        winnerColor === "Black" ? Color.Black : Color.White,
+                      type: PieceType.King,
+                    },
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div className="bg-gray-900/60 px-8 py-6 rounded-2xl border border-gray-700/50">
@@ -75,7 +94,7 @@ export default function GameOver() {
         </div>
 
         {/* Last Notifications */}
-        {game.notifications?.length > 0 && (
+        {game && game.notifications?.length > 0 && (
           <div className="bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6">
             <h3 className="text-lg font-semibold text-white mb-4">
               Last Notifications
@@ -93,15 +112,7 @@ export default function GameOver() {
 
         {/* Back Button */}
         <div className="pt-4">
-          <button
-            onClick={() => {
-              localStorage.removeItem("currentGame");
-              navigate("/");
-            }}
-            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-semibold text-lg transition-all duration-200 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900"
-          >
-            Back to Home
-          </button>
+          <Button onClick={onGameOver}>Back to Home</Button>
         </div>
       </div>
     </div>

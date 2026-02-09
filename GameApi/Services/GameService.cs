@@ -93,7 +93,9 @@ public class GameService : IGameService
             return Result<GameDto>.Failure("Invalid move");
 
         _store.GameDto.Notifications.Clear();
+        _store.GameDto.Status.Clear();
         _store.Game.MovePiece(piece, path);
+        _store.GameDto.Status.Add(Status.Move);
         UpdateGameState();
 
         return Result<GameDto>.Success(_store.GameDto);
@@ -112,6 +114,7 @@ public class GameService : IGameService
             _store.Game.PiecePromoted -= game_PiecePromoted;
             _store.Game.TurnChanged -= game_TurnChanged;
             _store.GameDto.Notifications.Clear();
+            _store.GameDto.Status.Clear();
         }
 
         IBoard board = new Board(GameController.BoardSize);
@@ -140,6 +143,7 @@ public class GameService : IGameService
         if (gameWinner != null)
         {
             _store.GameDto.Notifications.Add($"\n{gameWinner.Name} ({gameWinner.Color}) WINS!");
+            _store.GameDto.Status.Add(Status.GameOver);
         }
 
         PlayerDto? winner = gameWinner == null ? null : new PlayerDto
@@ -210,12 +214,14 @@ public class GameService : IGameService
     {
         string notification = $"Piece Captured! {e.CapturedPiece.Color} {e.CapturedPiece.Type} ({e.CapturedPosition.X + 1},{e.CapturedPosition.Y + 1}) was removed from the board.";
         _store.GameDto.Notifications.Add(notification);
+        _store.GameDto.Status.Add(Status.Capture);
     }
 
     private void game_PiecePromoted(object? sender, PiecePromotedEventArgs e)
     {
         string notification = $"Piece Promoted! {e.PromotedPiece.Color} piece ({e.PromotedPosition.X + 1},{e.PromotedPosition.Y + 1}) has become a King!";
         _store.GameDto.Notifications.Add(notification);
+        _store.GameDto.Status.Add(Status.Promote);
     }
 
     private void game_TurnChanged(object? sender, TurnChangedEventArgs e)

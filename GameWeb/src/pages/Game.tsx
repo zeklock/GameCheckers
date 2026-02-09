@@ -2,12 +2,22 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
   Color,
+  Status,
   type GameDto,
   type MoveDto,
   type PositionDto,
 } from "../types/game";
 import { gameApi } from "../api/gameApi";
 import Board from "../components/Board";
+import Button from "../components/Button";
+
+const invalidSound = new Audio("/sounds/invalid.mp3");
+const sounds = [
+  new Audio("/sounds/move.mp3"),
+  new Audio("/sounds/capture.mp3"),
+  new Audio("/sounds/promote.mp3"),
+  new Audio("/sounds/gameover.mp3"),
+];
 
 function keyFor(pos: PositionDto) {
   return `${pos.x}_${pos.y}`;
@@ -24,31 +34,49 @@ export default function Game() {
   const [showNotif, setShowNotif] = useState(false);
   const [showError, setShowError] = useState(false);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("currentGame");
-    if (!saved) {
-      navigate("/");
-      return;
-    }
+  const playInvalidSound = () => {
+    invalidSound.currentTime = 0;
+    invalidSound.play();
+  };
+
+  const playSound = (status: Status[]) => {
+    status.forEach((s) => {
+      if (sounds[s]) {
+        sounds[s].currentTime = 0;
+        sounds[s].play();
+      }
+    });
+  };
+
+  const getState = async () => {
+    setLoading(true);
+    setError(null);
 
     try {
-      const parsed = JSON.parse(saved);
-      if (!parsed || !parsed.board || typeof parsed.board.size !== "number") {
-        throw new Error("Invalid or corrupted game state");
+      const response = await gameApi.state();
+      const game = response as GameDto;
+
+      if (!game.board) {
+        navigate("/");
+        return;
       }
-      setGame(parsed as GameDto);
+
+      setGame(game);
       setSelectablePieces(
-        (parsed.availablePieces ?? []).map((p: any) => keyFor(p.position)),
+        (game.availablePieces ?? []).map((p: any) => keyFor(p.position)),
       );
     } catch (e) {
       console.error("Failed to load game:", e);
-      localStorage.removeItem("currentGame");
       navigate("/");
     } finally {
       setLoading(false);
       setShowNotif(true);
     }
-  }, [navigate]);
+  };
+
+  useEffect(() => {
+    getState();
+  }, []);
 
   useEffect(() => {
     if (game?.winner) {
@@ -90,18 +118,19 @@ export default function Game() {
       };
 
       try {
-        const newGame = await gameApi.move(move);
-        setGame(newGame);
-        localStorage.setItem("currentGame", JSON.stringify(newGame));
+        const newGameState = await gameApi.move(move);
+        setGame(newGameState);
         setSelected(null);
         setPaths({});
         setSelectablePieces(
-          (newGame.availablePieces ?? []).map((p) => keyFor(p.position)),
+          (newGameState.availablePieces ?? []).map((p) => keyFor(p.position)),
         );
         setShowNotif(true);
+        playSound(newGameState.status ?? []);
       } catch (err: any) {
         setError(err.message || "Invalid move");
         setShowError(true);
+        playInvalidSound();
       }
       return;
     }
@@ -120,6 +149,7 @@ export default function Game() {
     if (cell.piece.color !== game.currentPlayer.color) {
       setError("Not your piece");
       setShowError(true);
+      playInvalidSound();
       return;
     }
 
@@ -130,6 +160,7 @@ export default function Game() {
     ) {
       setError("This piece cannot move");
       setShowError(true);
+      playInvalidSound();
       return;
     }
 
@@ -147,12 +178,12 @@ export default function Game() {
     } catch (err: any) {
       setError(err.message || "No available moves");
       setShowError(true);
+      playInvalidSound();
     }
   };
 
   const onBackHome = () => {
     navigate("/");
-    localStorage.removeItem("currentGame");
   };
 
   if (loading) {
@@ -170,12 +201,7 @@ export default function Game() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
         <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
           <h2 className="text-2xl font-bold text-red-400 mb-4">No game data</h2>
-          <button
-            onClick={() => onBackHome()}
-            className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-medium transition-all"
-          >
-            Back to Home
-          </button>
+          <Button onClick={onBackHome}>Back to Home</Button>
         </div>
       </div>
     );
@@ -191,15 +217,7 @@ export default function Game() {
           <h2 className="text-2xl font-bold text-red-400 mb-4">
             Board data invalid
           </h2>
-          <button
-            onClick={() => {
-              localStorage.removeItem("currentGame");
-              navigate("/");
-            }}
-            className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-medium transition-all"
-          >
-            Back to Home
-          </button>
+          <Button onClick={onBackHome}>Back to Home</Button>
         </div>
       </div>
     );
@@ -280,15 +298,7 @@ export default function Game() {
 
         {/* Back Button */}
         <div className="text-center">
-          <button
-            onClick={() => {
-              localStorage.removeItem("currentGame");
-              navigate("/");
-            }}
-            className="px-8 py-4 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-xl text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            Back to Home
-          </button>
+          <Button onClick={onBackHome}>Back to Home</Button>
         </div>
       </div>
     </div>

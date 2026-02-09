@@ -1,18 +1,14 @@
-import {
-  Color,
-  PieceType,
-  type PieceDto,
-  type PositionDto,
-} from "../types/game";
+import { type PieceDto, type PositionDto } from "../types/game";
+import Piece from "./Piece";
 
 type Props = {
-  cell: {
+  cell?: {
     position: PositionDto;
     piece?: PieceDto | null;
   };
   onClick?: (pos: PositionDto) => void;
-  isSelectable: boolean;
-  isSelected: boolean;
+  isSelectable?: boolean;
+  isSelected?: boolean;
 };
 
 export default function Cell({
@@ -21,11 +17,11 @@ export default function Cell({
   isSelectable,
   isSelected,
 }: Props) {
-  const { position, piece } = cell;
-  const isDark = (position.x + position.y) % 2 === 1;
+  const { position, piece } = cell || {};
+  const isDark = position ? (position.x + position.y) % 2 === 1 : false;
 
   const handleClick = () => {
-    if (onClick) onClick(position);
+    if (onClick && position) onClick(position);
   };
 
   // Gunakan outline untuk highlight biar ga nambah ukuran cell (no layout shift)
@@ -79,27 +75,7 @@ export default function Cell({
         transition: "all 0.2s ease",
       }}
     >
-      {piece && (
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: "50%",
-            background: piece.color === Color.Black ? "#222" : "#f0f0f0",
-            border:
-              piece.color === Color.Black ? "2px solid #111" : "2px solid #ccc",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.5)",
-            fontSize: "1.6rem",
-            fontWeight: "bold",
-            color: piece.color === Color.Black ? "#ffcc00" : "#333",
-          }}
-        >
-          {piece.type === PieceType.King ? "♔" : ""}
-        </div>
-      )}
+      {piece && <Piece color={piece.color} type={piece.type} />}
     </div>
   );
 }

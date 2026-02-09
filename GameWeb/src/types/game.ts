@@ -8,6 +8,14 @@ export enum Color {
   White,
 }
 
+export enum Status {
+  Move,
+  Capture,
+  Promote,
+  GameOver,
+  Invalid = 99,
+}
+
 export interface PlayerDto {
   name: string;
   color: Color;
@@ -45,4 +53,5 @@ export interface GameDto {
     piece: PieceDto;
   }[];
   notifications: string[];
+  status: Status[];
 }

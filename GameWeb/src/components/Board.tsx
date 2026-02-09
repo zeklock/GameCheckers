@@ -69,9 +69,9 @@ export default function Board({
           onClick={onCellClick}
           isSelectable={selectableTargets.includes(keyFor(cell.position))}
           isSelected={
-            selected &&
-            selected.x === cell.position.x &&
-            selected.y === cell.position.y
+            selected
+              ? selected.x === cell.position.x && selected.y === cell.position.y
+              : false
           }
         />
       ))}

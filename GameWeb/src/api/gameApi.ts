@@ -53,6 +53,7 @@ function mapToGameDto(raw: any): GameDto {
         }))
       : [],
     notifications: Array.isArray(raw.notifications) ? raw.notifications : [],
+    status: Array.isArray(raw.status) ? raw.status : [],
   };
 }
 
@@ -62,11 +63,15 @@ async function fetchApi<TRequest, TResponse>(
   body: TRequest,
   isGameEndpoint: boolean = true,
 ): Promise<TResponse> {
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
+  const options: RequestInit = {
     method,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  };
+  const hasBody = ["post", "put", "patch"].includes(method.toLowerCase());
+  if (hasBody) {
+    options.body = JSON.stringify(body);
+  }
+  const res = await fetch(`${BASE_URL}${endpoint}`, options);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));

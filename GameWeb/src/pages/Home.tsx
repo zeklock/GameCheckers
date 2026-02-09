@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Color, type PlayerDto } from "../types/game";
 import { useNavigate } from "react-router-dom";
 import { gameApi } from "../api/gameApi";
+import Button from "../components/Button";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -29,8 +30,7 @@ export default function Home() {
     ];
 
     try {
-      const game = await gameApi.start(players);
-      localStorage.setItem("currentGame", JSON.stringify(game));
+      await gameApi.start(players);
       navigate("/game");
     } catch (err: any) {
       setError(err.message || "Failed to start the game");
@@ -78,22 +78,20 @@ export default function Home() {
               onClick={toggleColor}
               className={`
                 relative inline-flex items-center cursor-pointer w-20 h-10 rounded-full transition-all duration-300
-                ${player1IsBlack ? "bg-gray-800 border-2 border-gray-600" : "bg-gray-300 border-2 border-gray-400"}
+                ${player1IsBlack ? "bg-gray-300 border-2 border-gray-400" : "bg-gray-800 border-2 border-gray-600"}
               `}
             >
               {/* Knob */}
               <span
                 className={`
-                  absolute left-1 top-1 w-8 h-8 rounded-full shadow-lg transform transition-all duration-300 flex items-center justify-center text-sm font-bold
+                  absolute left-1 w-8 h-8 rounded-full shadow-lg transform transition-all duration-300 flex items-center justify-center text-sm font-bold
                   ${
                     player1IsBlack
-                      ? "translate-x-10 bg-black text-white border border-gray-700"
+                      ? "translate-x-9 bg-black text-white border border-gray-700"
                       : "bg-white text-black border border-gray-300"
                   }
                 `}
-              >
-                {player1IsBlack ? "B" : "W"}
-              </span>
+              ></span>
 
               {/* Labels inside switch */}
               <span className="absolute inset-0 flex items-center justify-between px-4 text-xs font-semibold">
@@ -135,21 +133,9 @@ export default function Home() {
 
           {/* Button & Error */}
           <div className="pt-6">
-            <button
-              onClick={start}
-              disabled={loading}
-              className={`
-                w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200
-                ${
-                  loading
-                    ? "bg-gray-600 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50"
-                }
-                text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900
-              `}
-            >
-              {loading ? "Starting..." : "Start Game"}
-            </button>
+            <Button onClick={start} disabled={loading}>
+              {loading ? "Starting..." : "Start New Game"}
+            </Button>
 
             {error && (
               <div className="mt-4 text-center text-red-400 text-sm font-medium bg-red-900/30 py-2 px-4 rounded-lg border border-red-800/50">
