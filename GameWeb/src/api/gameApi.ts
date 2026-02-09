@@ -56,13 +56,14 @@ function mapToGameDto(raw: any): GameDto {
   };
 }
 
-async function post<TRequest, TResponse>(
+async function fetchApi<TRequest, TResponse>(
+  method: string,
   endpoint: string,
   body: TRequest,
   isGameEndpoint: boolean = true,
 ): Promise<TResponse> {
   const res = await fetch(`${BASE_URL}${endpoint}`, {
-    method: "POST",
+    method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -92,8 +93,10 @@ async function post<TRequest, TResponse>(
 
 export const gameApi = {
   start: (players: PlayerDto[]) =>
-    post<PlayerDto[], GameDto>("/start", players, true),
+    fetchApi<PlayerDto[], GameDto>("POST", "/start", players, true),
   moves: (position: PositionDto) =>
-    post<PositionDto, PositionDto[][]>("/moves", position, false),
-  move: (move: MoveDto) => post<MoveDto, GameDto>("/move", move, true),
+    fetchApi<PositionDto, PositionDto[][]>("POST", "/moves", position, false),
+  move: (move: MoveDto) =>
+    fetchApi<MoveDto, GameDto>("POST", "/move", move, true),
+  state: () => fetchApi("GET", "/state", null, true),
 };

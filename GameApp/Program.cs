@@ -1,6 +1,7 @@
 ﻿using Checkers.Views;
 using GameBase;
 using GameBase.Dtos;
+using GameBase.Enums;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Models;

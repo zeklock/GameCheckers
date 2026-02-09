@@ -3,6 +3,7 @@ using GameApi.Dtos;
 using GameApi.Interfaces;
 using GameBase;
 using GameBase.Dtos;
+using GameBase.Enums;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Models;
@@ -95,6 +96,11 @@ public class GameService : IGameService
         _store.Game.MovePiece(piece, path);
         UpdateGameState();
 
+        return Result<GameDto>.Success(_store.GameDto);
+    }
+
+    public Result<GameDto> GetState()
+    {
         return Result<GameDto>.Success(_store.GameDto);
     }
 

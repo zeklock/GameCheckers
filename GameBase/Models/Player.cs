@@ -1,3 +1,4 @@
+using GameBase.Enums;
 using GameBase.Interfaces;
 
 namespace GameBase.Models;

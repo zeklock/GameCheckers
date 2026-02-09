@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using GameBase.Models;
+﻿using GameBase.Models;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Dtos;
+using GameBase.Enums;
 
 namespace GameBase;
 

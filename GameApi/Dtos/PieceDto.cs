@@ -1,4 +1,4 @@
-using GameBase.Models;
+using GameBase.Enums;
 
 namespace GameApi.Dtos;
 

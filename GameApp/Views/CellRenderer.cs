@@ -1,6 +1,6 @@
 using GameBase;
+using GameBase.Enums;
 using GameBase.Interfaces;
-using GameBase.Models;
 
 namespace Checkers.Views;
 

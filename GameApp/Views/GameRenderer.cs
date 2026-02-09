@@ -1,5 +1,6 @@
 using GameBase;
 using GameBase.Dtos;
+using GameBase.Enums;
 using GameBase.Interfaces;
 using GameBase.Models;
 

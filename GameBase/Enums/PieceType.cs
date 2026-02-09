@@ -1,3 +1,3 @@
-namespace GameBase.Models;
+namespace GameBase.Enums;
 
 public enum PieceType { Man, King }

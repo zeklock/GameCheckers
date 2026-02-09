@@ -48,4 +48,15 @@ public class GameController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet]
+    [Route("state")]
+    public IActionResult GetState()
+    {
+        Result<GameDto> result = _service.GetState();
+
+        if (!result.IsSuccess) return BadRequest(result);
+
+        return Ok(result);
+    }
 }
