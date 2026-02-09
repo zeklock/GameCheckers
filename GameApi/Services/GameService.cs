@@ -105,6 +105,7 @@ public class GameService : IGameService
             _store.Game.PieceCaptured -= game_PieceCaptured;
             _store.Game.PiecePromoted -= game_PiecePromoted;
             _store.Game.TurnChanged -= game_TurnChanged;
+            _store.GameDto.Notifications.Clear();
         }
 
         IBoard board = new Board(GameController.BoardSize);
