@@ -31,7 +31,6 @@ export default function Game() {
 
     try {
       const parsed = JSON.parse(saved);
-      // Guard lebih ketat: pastikan board & size ada
       if (!parsed || !parsed.board || typeof parsed.board.size !== "number") {
         throw new Error("Invalid or corrupted game state");
       }
@@ -129,17 +128,26 @@ export default function Game() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "40px" }}>
-        Loading game...
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center">
+        <div className="text-white text-xl font-medium animate-pulse">
+          Loading game...
+        </div>
       </div>
     );
   }
 
-  // Guard utama
   if (!game) {
     return (
-      <div style={{ textAlign: "center", padding: "40px", color: "salmon" }}>
-        No game data
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
+        <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
+          <h2 className="text-2xl font-bold text-red-400 mb-4">No game data</h2>
+          <button
+            onClick={() => navigate("/")}
+            className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-medium transition-all"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     );
   }
@@ -149,69 +157,94 @@ export default function Game() {
   if (!currentBoard || typeof currentBoard.size !== "number") {
     console.error("Invalid board in game state:", game);
     return (
-      <div style={{ textAlign: "center", padding: "40px", color: "salmon" }}>
-        Board data invalid
-        <br />
-        <button
-          onClick={() => {
-            localStorage.removeItem("currentGame");
-            navigate("/");
-          }}
-        >
-          Back to Home
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
+        <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
+          <h2 className="text-2xl font-bold text-red-400 mb-4">
+            Board data invalid
+          </h2>
+          <button
+            onClick={() => {
+              localStorage.removeItem("currentGame");
+              navigate("/");
+            }}
+            className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-medium transition-all"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h2>Checkers Game</h2>
-      <div style={{ marginBottom: "16px", fontSize: "1.2rem" }}>
-        <strong>Current turn:</strong> {game.currentPlayer.name} (
-        {game.currentPlayer.color === Color.Black ? "Black" : "White"})
-      </div>
-
-      <Board
-        board={currentBoard} // pakai variabel lokal
-        onCellClick={onCellClick}
-        selectableTargets={selected ? Object.keys(paths) : selectablePieces}
-        selected={selected}
-      />
-
-      {error && (
-        <div style={{ color: "salmon", marginTop: "16px" }}>{error}</div>
-      )}
-
-      {game.notifications?.length > 0 && (
-        <div
-          style={{
-            marginTop: "24px",
-            textAlign: "left",
-            maxWidth: "500px",
-            marginLeft: "auto",
-            marginRight: "auto",
-          }}
-        >
-          <h4>Notifications</h4>
-          <ul style={{ paddingLeft: "20px" }}>
-            {game.notifications.map((n, i) => (
-              <li key={i}>{n}</li>
-            ))}
-          </ul>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex flex-col items-center py-8 px-4">
+      <div className="w-full max-w-5xl">
+        {/* Header & Status */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-3">
+            Checkers Game
+          </h1>
+          <div className="inline-block bg-gray-800/80 backdrop-blur-sm px-6 py-3 rounded-full border border-gray-700/50">
+            <span className="text-gray-300 mr-2">Current turn:</span>
+            <span className="font-semibold text-white">
+              {game.currentPlayer.name}
+            </span>{" "}
+            <span className="text-gray-400">
+              ({game.currentPlayer.color === Color.Black ? "Black" : "White"})
+            </span>
+          </div>
         </div>
-      )}
 
-      <div style={{ marginTop: "24px" }}>
-        <button
-          onClick={() => {
-            localStorage.removeItem("currentGame");
-            navigate("/");
-          }}
-          style={{ padding: "10px 20px", fontSize: "1rem" }}
-        >
-          Back to Home
-        </button>
+        {/* Board Container */}
+        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/60 p-6 md:p-10 mb-8">
+          <div className="flex justify-center">
+            <Board
+              board={currentBoard}
+              onCellClick={onCellClick}
+              selectableTargets={
+                selected ? Object.keys(paths) : selectablePieces
+              }
+              selected={selected}
+            />
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="max-w-md mx-auto mb-6 text-center text-red-400 text-sm font-medium bg-red-900/30 py-3 px-6 rounded-xl border border-red-800/50">
+            {error}
+          </div>
+        )}
+
+        {/* Notifications */}
+        {game.notifications?.length > 0 && (
+          <div className="max-w-2xl mx-auto mb-8 bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-700/50 p-6">
+            <h3 className="text-lg font-semibold text-white mb-3">
+              Notifications
+            </h3>
+            <ul className="space-y-2 text-gray-300 text-sm">
+              {game.notifications.map((n, i) => (
+                <li key={i} className="flex items-start">
+                  <span className="text-indigo-400 mr-2">•</span>
+                  {n}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Back Button */}
+        <div className="text-center">
+          <button
+            onClick={() => {
+              localStorage.removeItem("currentGame");
+              navigate("/");
+            }}
+            className="px-8 py-4 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-xl text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     </div>
   );

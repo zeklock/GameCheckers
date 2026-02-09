@@ -34,6 +34,7 @@ export default function Cell({
   let outlineWidth = "0";
   let outlineOffset = "0";
   let boxShadow = "inset 0 0 8px rgba(0,0,0,0.3)";
+  let background = isDark ? "#8B5A2B" : "#F5DEB3";
 
   if (isSelected) {
     outlineStyle = "solid";
@@ -41,6 +42,7 @@ export default function Cell({
     outlineWidth = "3px";
     outlineOffset = "2px";
     boxShadow = "0 0 12px #64b5f6, inset 0 0 8px rgba(0,0,0,0.3)";
+    background = "#2196f3"; // biru untuk selected
   } else if (isSelectable) {
     if (piece) {
       outlineStyle = "solid";
@@ -48,12 +50,14 @@ export default function Cell({
       outlineWidth = "3px";
       outlineOffset = "2px";
       boxShadow = "0 0 10px #81c784, inset 0 0 6px rgba(0,0,0,0.3)";
+      background = "#4caf50"; // hijau untuk piece yang bisa digerakkan
     } else {
       outlineStyle = "dashed";
       outlineColor = "#ff9800"; // oranye dashed untuk target kosong
       outlineWidth = "3px";
       outlineOffset = "2px";
       boxShadow = "0 0 8px #ffb74d";
+      background = "#ff9800"; // oranye dashed untuk target kosong
     }
   }
 
@@ -63,7 +67,7 @@ export default function Cell({
       style={{
         width: 60,
         height: 60,
-        background: isDark ? "#8B5A2B" : "#F5DEB3",
+        background,
         boxSizing: "border-box",
         outline: `${outlineWidth} ${outlineStyle} ${outlineColor}`,
         outlineOffset,

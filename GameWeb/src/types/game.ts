@@ -1,11 +1,11 @@
 export enum PieceType {
-  Man = 0,
-  King = 1,
+  Man,
+  King,
 }
 
 export enum Color {
-  Black = 0,
-  White = 1,
+  Black,
+  White,
 }
 
 export interface PlayerDto {
@@ -25,8 +25,8 @@ export interface PieceDto {
 
 export interface MoveDto {
   piece: PieceDto;
-  position: PositionDto;   // ← posisi ASAL piece (from)
-  path: PositionDto[];     // ← urutan tujuan (dari /moves)
+  position: PositionDto;
+  path: PositionDto[];
 }
 
 export interface GameDto {
