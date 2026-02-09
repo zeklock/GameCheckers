@@ -126,6 +126,11 @@ export default function Game() {
     }
   };
 
+  const onBackHome = () => {
+    navigate("/");
+    localStorage.removeItem("currentGame");
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center">
@@ -142,7 +147,7 @@ export default function Game() {
         <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
           <h2 className="text-2xl font-bold text-red-400 mb-4">No game data</h2>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => onBackHome()}
             className="mt-4 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-xl text-white font-medium transition-all"
           >
             Back to Home
