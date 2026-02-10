@@ -42,7 +42,7 @@ public class GameController
         _playerPieces = new Dictionary<IPlayer, List<IPiece>>();
     }
 
-    public void PlacePiece()
+    private void InitializePieces()
     {
         List<int> pieceTopRow = new List<int> { 0, 1, 2 };
         List<int> pieceBottomRow = new List<int> { 5, 6, 7 };
@@ -78,10 +78,8 @@ public class GameController
         }
     }
 
-    public void InitializePieces()
+    private void InitializePlayerPieces()
     {
-        PlacePiece();
-
         foreach (IPlayer p in _players)
         {
             List<IPiece> pieces = _board.Cells
@@ -97,6 +95,7 @@ public class GameController
     public void Start()
     {
         InitializePieces();
+        InitializePlayerPieces();
     }
 
     public static bool IsCellForPiece(int x, int y) => (x + y) % 2 != 0;
@@ -135,7 +134,7 @@ public class GameController
         }
     }
 
-    public List<MovablePieceDto> GetMovablePieces(IPlayer player)
+    public virtual List<MovablePieceDto> GetMovablePieces(IPlayer player)
     {
         List<MovablePieceDto> jumpPieceMoves = new List<MovablePieceDto>();
         List<MovablePieceDto> normalPieceMoves = new List<MovablePieceDto>();
