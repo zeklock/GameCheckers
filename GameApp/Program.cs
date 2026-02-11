@@ -5,6 +5,11 @@ using GameBase.Enums;
 using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 
 namespace GameApp;
 
@@ -14,6 +19,33 @@ internal class Program
 
     static void Main(string[] args)
     {
+        // Setup logging
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .WriteTo.Console(
+                new JsonFormatter(),
+                restrictedToMinimumLevel: LogEventLevel.Information
+            )
+            .WriteTo.File(
+                new JsonFormatter(),
+                "logs/gameapi-.log",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 30,
+                shared: true
+            )
+            .CreateLogger();
+
+        var serviceProvider = new ServiceCollection()
+            .AddLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.AddSerilog();
+            })
+            .BuildServiceProvider();
+
+        var logger = serviceProvider.GetRequiredService<ILogger<GameController>>();
+
         bool isSelectPlayerCombination = true;
 
         while (isSelectPlayerCombination)
@@ -50,7 +82,7 @@ internal class Program
             new Player(_combinationChoice == 1 ? Color.White : Color.Black, "Player 2")
         };
 
-        GameController gameController = new GameController(board, players);
+        GameController gameController = new GameController(board, players, logger);
         gameController.Start();
 
         // Subscribe to events

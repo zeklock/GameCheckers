@@ -3,11 +3,14 @@ using GameBase.Events;
 using GameBase.Interfaces;
 using GameBase.Dtos;
 using GameBase.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace GameBase;
 
 public class GameController
 {
+    private readonly ILogger<GameController> _logger;
+
     public const int BoardSize = 8;
     private IBoard _board;
     private List<IPlayer> _players;
@@ -21,25 +24,45 @@ public class GameController
     protected virtual void OnPieceCaptured(PieceCapturedEventArgs e)
     {
         PieceCaptured?.Invoke(this, e);
+        _logger.LogInformation(
+            "Piece captured: {PieceColor} {PieceType} at {Position}",
+            e.CapturedPiece.Color,
+            e.CapturedPiece.Type,
+            e.CapturedPosition.ToString()
+        );
     }
 
     protected virtual void OnPiecePromoted(PiecePromotedEventArgs e)
     {
         PiecePromoted?.Invoke(this, e);
+        _logger.LogInformation(
+            "Piece promoted: {PieceColor} piece at {Position} promoted to King",
+            e.PromotedPiece.Color,
+            e.PromotedPosition.ToString()
+        );
     }
 
     protected virtual void OnTurnChanged(TurnChangedEventArgs e)
     {
         TurnChanged?.Invoke(this, e);
+        _logger.LogInformation(
+            "Turn changed: It is now {PlayerName}'s turn.",
+            e.CurrentPlayer.Name
+        );
     }
 
-    public GameController(IBoard board, List<IPlayer> players)
+    public GameController(
+        IBoard board,
+        List<IPlayer> players,
+        ILogger<GameController> logger
+    )
     {
         _board = board;
         _players = players;
         _currPlayer = players.FirstOrDefault(p => p.Color == Color.Black) ?? players[0];
         _winner = null;
         _playerPieces = new Dictionary<IPlayer, List<IPiece>>();
+        _logger = logger;
     }
 
     private void InitializePieces()
@@ -76,6 +99,8 @@ public class GameController
                 );
             }
         }
+
+        _logger.LogDebug("Pieces initialized on the board.");
     }
 
     private void InitializePlayerPieces()
@@ -90,12 +115,22 @@ public class GameController
 
             _playerPieces.Add(p, pieces);
         }
+
+        _logger.LogDebug(
+            "Player pieces initialized. Player1: {Player1Count} pieces, Player2: {Player2Count} pieces",
+            _playerPieces[_players[0]].Count,
+            _playerPieces[_players[1]].Count
+        );
     }
 
     public void Start()
     {
         InitializePieces();
         InitializePlayerPieces();
+        _logger.LogInformation(
+            "Game started with {PlayerCount} players.",
+            _players.Count
+        );
     }
 
     public static bool IsCellForPiece(int x, int y) => (x + y) % 2 != 0;
@@ -118,6 +153,11 @@ public class GameController
         {
             IPlayer opponent = _players.First(p => p != _currPlayer);
             _winner = opponent;
+            _logger.LogInformation(
+                "Player {PlayerName} has no moves left. Player {OpponentName} wins!",
+                _currPlayer.Name,
+                opponent.Name
+            );
             return;
         }
 
@@ -129,6 +169,11 @@ public class GameController
             {
                 IPlayer opponent = _players.First(p => p != player);
                 _winner = opponent;
+                _logger.LogInformation(
+                    "Player {PlayerName} has no pieces left. Player {OpponentName} wins!",
+                    player.Name,
+                    opponent.Name
+                );
                 return;
             }
         }
@@ -201,14 +246,14 @@ public class GameController
         return normalMoves;
     }
 
-    public List<List<Position>> GetJumpPaths(IPiece piece, Position start)
+    private List<List<Position>> GetJumpPaths(IPiece piece, Position start)
     {
         List<List<Position>> result = new List<List<Position>>();
         ExploreJumps(piece, start, new List<Position>(), result, new HashSet<Position>(), new HashSet<Position>());
         return result;
     }
 
-    public void ExploreJumps(IPiece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited, HashSet<Position> captured)
+    private void ExploreJumps(IPiece piece, Position currentPos, List<Position> path, List<List<Position>> result, HashSet<Position> visited, HashSet<Position> captured)
     {
         bool jumped = false;
         IEnumerable<Direction> directions = GetMovementDirections(piece);
@@ -258,7 +303,7 @@ public class GameController
     /// <summary>
     /// Gets normal (non-jump) moves from a position.
     /// </summary>
-    public List<Position> GetNormalMoves(IPiece piece, Position position)
+    private List<Position> GetNormalMoves(IPiece piece, Position position)
     {
         List<Position> moves = new List<Position>();
         IEnumerable<Direction> directions = GetMovementDirections(piece);
@@ -279,7 +324,7 @@ public class GameController
     /// <summary>
     /// Gets the board position of a piece.
     /// </summary>
-    public Position? GetPiecePosition(IPiece piece)
+    private Position? GetPiecePosition(IPiece piece)
     {
         for (int y = 0; y < BoardSize; y++)
         {
@@ -308,9 +353,12 @@ public class GameController
     /// Player1 (at bottom, _players[0]) moves up. Player2 (at top, _players[1]) moves down.
     /// Kings can move in all diagonal directions, Men only forward.
     /// </summary>
-    public List<Direction> GetMovementDirections(IPiece piece)
+    private List<Direction> GetMovementDirections(IPiece piece)
     {
         List<Direction> directions = new List<Direction>();
+
+        if (piece == null)
+            return directions;
 
         if (piece.Type == PieceType.King)
         {
@@ -367,22 +415,47 @@ public class GameController
     /// </summary>
     public void MovePiece(IPiece piece, List<Position> path)
     {
+        _logger.LogInformation(
+            "Player {PlayerName} attempts to move piece at {From} along path: {Path}",
+            _currPlayer.Name,
+            GetPiecePosition(piece)?.ToString() ?? "Unknown",
+            path
+        );
+
         if (path == null || path.Count == 0)
+        {
+            _logger.LogWarning("Invalid move: Path is null or empty.");
             return;
+        }
 
         // Validate piece exists on board
         Position? piecePosition = GetPiecePosition(piece);
 
         if (piecePosition == null)
+        {
+            _logger.LogWarning("Invalid move: Piece is not on the board.");
             return;
+        }
 
         // Validate piece belongs to current player
         if (piece.Color != _currPlayer.Color)
+        {
+            _logger.LogWarning(
+                "Invalid move: Piece belongs to {PieceColor} but current player is {PlayerColor}.",
+                piece.Color,
+                _currPlayer.Color
+            );
             return;
+        }
 
         // Validate path is legal for this piece
         if (!IsValidLegalMove(piece, path))
+        {
+            _logger.LogWarning(
+                "Invalid move: Provided path is not a legal move for the piece."
+            );
             return;
+        }
 
         int deltaMove = 1;
         int deltaJump = 2;
@@ -394,7 +467,13 @@ public class GameController
             IPiece? pieceTo = GetPiece(pathTo);
 
             if (pathFrom == null || !IsInside(pathTo) || pieceTo != null)
+            {
+                _logger.LogWarning(
+                    "Invalid move: Path is outside board or destination {To} is occupied.",
+                    pathTo.ToString()
+                );
                 return;
+            }
 
             int deltaX = Math.Abs(pathTo.X - pathFrom.Value.X);
             int deltaY = Math.Abs(pathTo.Y - pathFrom.Value.Y);
@@ -403,15 +482,34 @@ public class GameController
             if (deltaX == deltaMove && deltaY == deltaMove)
             {
                 if (!IsValidNormalMove(piece, pathFrom.Value, pathTo))
+                {
+                    _logger.LogWarning(
+                        "Invalid move: Normal move from {From} to {To} is not legal for the piece.",
+                        pathFrom.Value.ToString(),
+                        pathTo.ToString()
+                    );
                     return;
+                }
 
                 if (path.Count > 1)
+                {
+                    _logger.LogWarning(
+                        "Invalid move: Normal move cannot be part of a multi-step path."
+                    );
                     return; // invalid: normal move cannot be part of multi-step path
+                }
 
                 _board.Cells[pathFrom.Value.X, pathFrom.Value.Y].Piece = null;
                 _board.Cells[pathTo.X, pathTo.Y].Piece = piece;
                 CheckPromotion(piece, pathTo);
                 SwitchPlayer();
+
+                _logger.LogInformation(
+                    "Player {PlayerName} moved piece from {From} to {To}.",
+                    _currPlayer.Name,
+                    pathFrom.Value.ToString(),
+                    pathTo.ToString()
+                );
                 return;
             }
             // Jump move (two diagonal squares)
@@ -420,12 +518,24 @@ public class GameController
                 Position capturedPosition = GetCapturedPiecePosition(pathFrom.Value, pathTo);
 
                 if (!IsInside(capturedPosition))
+                {
+                    _logger.LogWarning(
+                        "Invalid move: Captured position {CapturedPos} is outside the board.",
+                        capturedPosition.ToString()
+                    );
                     return;
+                }
 
                 IPiece? capturedPiece = GetPiece(capturedPosition);
 
                 if (capturedPiece == null || capturedPiece.Color == piece.Color)
+                {
+                    _logger.LogWarning(
+                        "Invalid move: No opponent piece to capture at {CapturedPos}.",
+                        capturedPosition.ToString()
+                    );
                     return;
+                }
 
                 _board.Cells[pathFrom.Value.X, pathFrom.Value.Y].Piece = null;
                 _board.Cells[pathTo.X, pathTo.Y].Piece = piece;
@@ -437,6 +547,14 @@ public class GameController
                 {
                     CheckPromotion(piece, pathTo);
                     SwitchPlayer();
+
+                    _logger.LogInformation(
+                        "Player {PlayerName} moved piece from {From} to {To} and captured piece at {CapturedPos}.",
+                        _currPlayer.Name,
+                        pathFrom.Value.ToString(),
+                        pathTo.ToString(),
+                        capturedPosition.ToString()
+                    );
                     return;
                 }
 
@@ -445,6 +563,11 @@ public class GameController
             }
             else
             {
+                _logger.LogWarning(
+                    "Invalid move: Step from {From} to {To} is not a valid normal move or jump.",
+                    pathFrom?.ToString() ?? "Unknown",
+                    pathTo.ToString()
+                );
                 return; // invalid step
             }
         }
@@ -464,7 +587,7 @@ public class GameController
     /// Validates if a normal (non-jump) move is legal for a piece.
     /// Player1 at bottom moves up (Y decreases). Player2 at top moves down (Y increases).
     /// </summary>
-    public bool IsValidNormalMove(IPiece piece, Position from, Position to)
+    private bool IsValidNormalMove(IPiece piece, Position from, Position to)
     {
         int deltaX = to.X - from.X;
         int deltaY = to.Y - from.Y;
@@ -492,7 +615,7 @@ public class GameController
         return true;
     }
 
-    public bool PlayerHasAnyJump(IPlayer player)
+    private bool PlayerHasAnyJump(IPlayer player)
     {
         for (int x = 0; x < BoardSize; x++)
         {
@@ -517,7 +640,7 @@ public class GameController
     /// <summary>
     /// Gets the position of a captured piece between two diagonal positions.
     /// </summary>
-    public Position GetCapturedPiecePosition(Position from, Position to)
+    private Position GetCapturedPiecePosition(Position from, Position to)
     {
         return new Position((from.X + to.X) / 2, (from.Y + to.Y) / 2);
     }
@@ -527,7 +650,7 @@ public class GameController
     /// Player1 (at bottom) promotes when reaching row 0 (top).
     /// Player2 (at top) promotes when reaching row 7 (bottom).
     /// </summary>
-    public void CheckPromotion(IPiece piece, Position position)
+    private void CheckPromotion(IPiece piece, Position position)
     {
         if (piece.Type == PieceType.King)
             return;
@@ -544,7 +667,7 @@ public class GameController
         }
     }
 
-    public void Promote(IPiece piece, Position position)
+    private void Promote(IPiece piece, Position position)
     {
         piece.Type = PieceType.King;
         OnPiecePromoted(new PiecePromotedEventArgs(piece, position));
@@ -553,7 +676,7 @@ public class GameController
     /// <summary>
     /// Removes a piece from the board and from the player's piece list.
     /// </summary>
-    public void RemovePiece(IPiece piece)
+    private void RemovePiece(IPiece piece)
     {
         Position? position = GetPiecePosition(piece);
 
@@ -567,12 +690,19 @@ public class GameController
         {
             playerPiece.Value.Remove(piece);
         }
+
+        _logger.LogInformation(
+            "Piece removed: {PieceColor} {PieceType} at {Position}",
+            piece.Color,
+            piece.Type,
+            position?.ToString() ?? "Unknown"
+        );
     }
 
     /// <summary>
     /// Switches to the next player's turn.
     /// </summary>
-    public void SwitchPlayer()
+    private void SwitchPlayer()
     {
         int currentIndex = _players.IndexOf(_currPlayer);
         _currPlayer = _players[(currentIndex + 1) % _players.Count];

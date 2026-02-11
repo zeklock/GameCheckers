@@ -13,10 +13,15 @@ namespace GameApi.Services;
 public class GameService : IGameService
 {
     private readonly GameStore _store;
+    private readonly ILoggerFactory _loggerFactory;
 
-    public GameService(GameStore store)
+    public GameService(
+        GameStore store,
+        ILoggerFactory loggerFactory
+    )
     {
         _store = store;
+        _loggerFactory = loggerFactory;
     }
 
     public Result<GameDto> Start(List<PlayerDto> playerDtos)
@@ -124,7 +129,8 @@ public class GameService : IGameService
             new Player(playerDtos[1].Color, playerDtos[1].Name)
         };
 
-        _store.Game = new GameController(board, players);
+        ILogger<GameController> gameLogger = _loggerFactory.CreateLogger<GameController>();
+        _store.Game = new GameController(board, players, gameLogger);
         _store.Game.Start();
 
         _store.Game.PieceCaptured += game_PieceCaptured;

@@ -2,6 +2,7 @@
 using GameBase.Enums;
 using GameBase.Interfaces;
 using GameBase.Models;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace GameBase.Tests;
@@ -29,7 +30,8 @@ public class GameControllerTest
         player2.SetupGet(p => p.Color).Returns(Color.White);
         _players.Add(player2.Object);
 
-        _gameController = new GameController(_board, _players);
+        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
+        _gameController = new GameController(_board, _players, loggerMock.Object);
     }
 
     #region Start
@@ -159,7 +161,8 @@ public class GameControllerTest
     public void CheckWin_NoMovablePieces_WinnerIsOpponent()
     {
         // Arrange
-        var gameMock = new Mock<GameController>(_board, _players) { CallBase = true };
+        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
+        Mock<GameController> gameMock = new Mock<GameController>(_board, _players, loggerMock.Object) { CallBase = true };
         IPlayer currentPlayer = gameMock.Object.GetCurrentPlayer();
         IPlayer opponentPlayer = gameMock.Object.GetPlayers().First(p => p != currentPlayer);
         gameMock
@@ -177,7 +180,8 @@ public class GameControllerTest
     public void CheckWin_NoMovablePieces_WinnerIsNotCurrentPlayer()
     {
         // Arrange
-        var gameMock = new Mock<GameController>(_board, _players) { CallBase = true };
+        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
+        Mock<GameController> gameMock = new Mock<GameController>(_board, _players, loggerMock.Object) { CallBase = true };
         IPlayer currentPlayer = gameMock.Object.GetCurrentPlayer();
         gameMock
             .Setup(g => g.GetMovablePieces(currentPlayer))
@@ -221,6 +225,116 @@ public class GameControllerTest
 
         // Assert
         Assert.That(_gameController.GetWinner(), Is.Not.EqualTo(currentPlayer));
+    }
+    #endregion
+
+    #region GetMovablePieces
+    [Test]
+    [TestCase(Color.Black, 0, 5)]
+    [TestCase(Color.Black, 2, 5)]
+    [TestCase(Color.Black, 4, 5)]
+    [TestCase(Color.Black, 6, 5)]
+    [TestCase(Color.White, 1, 2)]
+    [TestCase(Color.White, 3, 2)]
+    [TestCase(Color.White, 5, 2)]
+    [TestCase(Color.White, 7, 2)]
+    public void GetMovablePieces_StartFrontPiece_ShouldOnList(
+        Color color, int x, int y
+    )
+    {
+        // Arrange
+        IPlayer player = _players.First(p => p.Color == color);
+        Position expectedMovablePiece = new Position(x, y);
+
+        // Act
+        _gameController.Start();
+
+        List<Position> actualMovablePieces = _gameController.GetMovablePieces(player)
+            .Select(mp => mp.Position)
+            .ToList();
+
+        // Assert
+        Assert.That(actualMovablePieces, Contains.Item(expectedMovablePiece));
+    }
+
+    [Test]
+    [TestCase(Color.Black, 1, 6)]
+    [TestCase(Color.Black, 3, 6)]
+    [TestCase(Color.Black, 5, 6)]
+    [TestCase(Color.Black, 7, 6)]
+    [TestCase(Color.White, 0, 3)]
+    [TestCase(Color.White, 2, 3)]
+    [TestCase(Color.White, 4, 3)]
+    [TestCase(Color.White, 6, 3)]
+    public void GetMovablePieces_StartBackPiece_ShouldNotOnList(
+        Color color, int x, int y
+    )
+    {
+        // Arrange
+        IPlayer player = _players.First(p => p.Color == color);
+        Position expectedMovablePiece = new Position(x, y);
+
+        // Act
+        _gameController.Start();
+
+        List<Position> actualMovablePieces = _gameController.GetMovablePieces(player)
+            .Select(mp => mp.Position)
+            .ToList();
+
+        // Assert
+        Assert.That(actualMovablePieces, Does.Not.Contain(expectedMovablePiece));
+    }
+    #endregion
+
+    #region GetLegalMoves
+    [Test]
+    [TestCase(0, 5)]
+    [TestCase(2, 5)]
+    [TestCase(4, 5)]
+    [TestCase(6, 5)]
+    [TestCase(1, 2)]
+    [TestCase(3, 2)]
+    [TestCase(5, 2)]
+    [TestCase(7, 2)]
+    public void GetLegalMoves_StartFrontPiece_ShouldHaveLegalMoves(
+        int x, int y
+    )
+    {
+        // Arrange
+        _gameController.Start();
+        Position position = new Position(x, y);
+        IPiece piece = _gameController.GetPiece(position)!;
+
+        // Act
+        List<List<Position>> actualLegalMoves = _gameController.GetLegalMoves(piece);
+
+        // Assert
+        Assert.That(actualLegalMoves.Count, Is.GreaterThan(0));
+    }
+
+    [Test]
+    [TestCase(1, 6)]
+    [TestCase(3, 6)]
+    [TestCase(5, 6)]
+    [TestCase(7, 6)]
+    [TestCase(0, 3)]
+    [TestCase(2, 3)]
+    [TestCase(4, 3)]
+    [TestCase(6, 3)]
+    public void GetLegalMoves_StartBackPiece_ShouldNotHaveLegalMoves(
+        int x, int y
+    )
+    {
+        // Arrange
+        _gameController.Start();
+        Position position = new Position(x, y);
+        IPiece piece = _gameController.GetPiece(position)!;
+
+        // Act
+        List<List<Position>> actualLegalMoves = _gameController.GetLegalMoves(piece);
+
+        // Assert
+        Assert.That(actualLegalMoves.Count, Is.EqualTo(0));
     }
     #endregion
 }
