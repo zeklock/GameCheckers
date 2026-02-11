@@ -56,15 +56,16 @@ public class GameControllerTest
     }
 
     [Test]
-    public void Start_PiecesOnBoard_InvalidPieceCount()
+    [TestCase(0)]
+    [TestCase(1)]
+    [TestCase(3)]
+    [TestCase(5)]
+    [TestCase(7)]
+    [TestCase(11)]
+    public void Start_PiecesOnBoard_ShouldNotLessThan12(int invalidCount)
     {
         // Arrange
         List<Color> colors = new List<Color> { Color.Black, Color.White };
-        int invalidCount;
-        do
-        {
-            invalidCount = Random.Shared.Next(0, 100);
-        } while (invalidCount == 12);
 
         // Act
         _gameController.Start();
@@ -75,8 +76,30 @@ public class GameControllerTest
             .ToDictionary(g => g.Key, g => g.Count());
 
         // Assert
-        Assert.That(actualPieces[Color.Black], Is.Not.EqualTo(invalidCount));
-        Assert.That(actualPieces[Color.White], Is.Not.EqualTo(invalidCount));
+        Assert.That(actualPieces[Color.Black], Is.Not.LessThan(invalidCount));
+        Assert.That(actualPieces[Color.White], Is.Not.LessThan(invalidCount));
+    }
+
+    [Test]
+    [TestCase(13)]
+    [TestCase(17)]
+    [TestCase(19)]
+    public void Start_PiecesOnBoard_ShouldNotGreaterThan12(int invalidCount)
+    {
+        // Arrange
+        Dictionary<IPlayer, List<IPiece>> playerPieces = _gameController.GetPlayerPieces();
+
+        // Act
+        _gameController.Start();
+        Dictionary<Color, int> actualPieces = _board.Cells
+            .Cast<ICell>()
+            .Where(c => c.Piece != null)
+            .GroupBy(c => c.Piece!.Color)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Assert
+        Assert.That(actualPieces[Color.Black], Is.Not.GreaterThan(invalidCount));
+        Assert.That(actualPieces[Color.White], Is.Not.GreaterThan(invalidCount));
     }
 
     [Test]
