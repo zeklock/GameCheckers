@@ -337,4 +337,160 @@ public class GameControllerTest
         Assert.That(actualLegalMoves.Count, Is.EqualTo(0));
     }
     #endregion
+
+    #region GetPiece
+    [Test]
+    [TestCase(0, 1)]
+    [TestCase(0, 5)]
+    public void GetPiece_ExistingPiece_ShouldReturnPiece(int x, int y)
+    {
+        // Arrange
+        Position position = new Position(x, y);
+
+        // Act
+        _gameController.Start();
+        IPiece? piece = _gameController.GetPiece(position);
+
+        // Assert
+        Assert.That(piece, Is.Not.Null);
+    }
+
+    [Test]
+    [TestCase(0, 3)]
+    [TestCase(0, 4)]
+    public void GetPiece_EmptyCell_ShouldReturnNull(int x, int y)
+    {
+        // Arrange
+        Position position = new Position(x, y);
+
+        // Act
+        _gameController.Start();
+        IPiece? piece = _gameController.GetPiece(position);
+
+        // Assert
+        Assert.That(piece, Is.Null);
+    }
+    #endregion
+
+    #region IsInside
+    [Test]
+    [TestCase(0, 1)]
+    [TestCase(0, 5)]
+    public void IsInside_ValidPosition_ShouldReturnTrue(int x, int y)
+    {
+        // Arrange
+        Position position = new Position(x, y);
+
+        // Act
+        bool isInside = GameController.IsInside(position);
+
+        // Assert
+        Assert.That(isInside, Is.True);
+    }
+
+    [Test]
+    [TestCase(0, -1)]
+    [TestCase(0, 8)]
+    public void IsInside_InvalidPosition_ShouldReturnFalse(int x, int y)
+    {
+        // Arrange
+        Position position = new Position(x, y);
+
+        // Act
+        bool isInside = GameController.IsInside(position);
+
+        // Assert
+        Assert.That(isInside, Is.False);
+    }
+    #endregion
+
+    #region MovePiece
+    [Test]
+    [TestCase(0, 5, 1, 4)]
+    [TestCase(2, 5, 3, 4)]
+    public void MovePiece_ValidMove_ShouldUpdatePiecePosition(
+        int xFrom, int yFrom, int xTo, int yTo
+    )
+    {
+        // Arrange
+        _gameController.Start();
+        Position from = new Position(xFrom, yFrom);
+        Position to = new Position(xTo, yTo);
+        IPiece piece = _gameController.GetPiece(from)!;
+
+        // Act
+        _gameController.MovePiece(piece, to);
+
+        // Assert
+        Assert.That(_gameController.GetPiece(from), Is.Null);
+        Assert.That(_gameController.GetPiece(to), Is.EqualTo(piece));
+    }
+
+    [Test]
+    [TestCase(0, 5, 0, 4)]
+    [TestCase(2, 5, 2, 4)]
+    public void MovePiece_InvalidMove_ShouldNotUpdatePiecePosition(
+        int xFrom, int yFrom, int xTo, int yTo
+    )
+    {
+        // Arrange
+        _gameController.Start();
+        Position from = new Position(xFrom, yFrom);
+        Position to = new Position(xTo, yTo);
+        IPiece piece = _gameController.GetPiece(from)!;
+
+        // Act
+        _gameController.MovePiece(piece, to);
+
+        // Assert
+        Assert.That(_gameController.GetPiece(from), Is.EqualTo(piece));
+        Assert.That(_gameController.GetPiece(to), Is.Null);
+    }
+    #endregion
+
+    #region IsValidLegalMove
+    [Test]
+    [TestCase(0, 5, 1, 4)]
+    [TestCase(2, 5, 3, 4)]
+    public void IsValidLegalMove_ValidMove_ShouldReturnTrue(
+        int xFrom, int yFrom, int xTo, int yTo
+    )
+    {
+        // Arrange
+        Position from = new Position(xFrom, yFrom);
+        Position to = new Position(xTo, yTo);
+        List<Position> path = new List<Position> { to };
+
+        _gameController.Start();
+        IPiece piece = _gameController.GetPiece(from)!;
+
+        // Act
+        bool isValid = _gameController.IsValidLegalMove(piece, path);
+
+        // Assert
+        Assert.That(isValid, Is.True);
+    }
+
+    [Test]
+    [TestCase(0, 5, 0, 4)]
+    [TestCase(2, 5, 2, 4)]
+    public void IsValidLegalMove_invalidMove_ShouldReturnFalse(
+        int xFrom, int yFrom, int xTo, int yTo
+    )
+    {
+        // Arrange
+        Position from = new Position(xFrom, yFrom);
+        Position to = new Position(xTo, yTo);
+        List<Position> path = new List<Position> { to };
+
+        _gameController.Start();
+        IPiece piece = _gameController.GetPiece(from)!;
+
+        // Act
+        bool isValid = _gameController.IsValidLegalMove(piece, path);
+
+        // Assert
+        Assert.That(isValid, Is.False);
+    }
+    #endregion
 }

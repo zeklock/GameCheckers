@@ -1,5 +1,4 @@
 using GameBase.Interfaces;
-using GameBase.Models;
 
 namespace GameBase.Events;
 

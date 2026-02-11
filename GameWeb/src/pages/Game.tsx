@@ -105,6 +105,12 @@ export default function Game() {
     setError(null);
     const key = keyFor(pos);
 
+    if (selected?.x === pos.x && selected?.y === pos.y) {
+      setSelected(null);
+      setPaths({});
+      return;
+    }
+
     if (selected && paths[key]) {
       const fromCell = game.board.cells.find(
         (c) => c.position.x === selected.x && c.position.y === selected.y,
@@ -148,6 +154,8 @@ export default function Game() {
 
     if (cell.piece.color !== game.currentPlayer.color) {
       setError("Not your piece");
+      setSelected(null);
+      setPaths({});
       setShowError(true);
       playInvalidSound();
       return;
@@ -188,7 +196,7 @@ export default function Game() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center">
         <div className="text-white text-xl font-medium animate-pulse">
           Loading game...
         </div>
@@ -198,7 +206,7 @@ export default function Game() {
 
   if (!game) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
         <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
           <h2 className="text-2xl font-bold text-red-400 mb-4">No game data</h2>
           <Button onClick={onBackHome}>Back to Home</Button>
@@ -212,7 +220,7 @@ export default function Game() {
   if (!currentBoard || typeof currentBoard.size !== "number") {
     console.error("Invalid board in game state:", game);
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-950 flex items-center justify-center px-4">
         <div className="text-center bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-2xl border border-gray-700/50 p-10 max-w-md">
           <h2 className="text-2xl font-bold text-red-400 mb-4">
             Board data invalid
@@ -224,7 +232,7 @@ export default function Game() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex flex-col items-center py-8 px-4">
+    <div className="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-950 flex flex-col items-center py-8 px-4">
       <div className="w-full max-w-5xl">
         {/* Header & Status */}
         <div className="text-center mb-8">
