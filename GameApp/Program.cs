@@ -29,7 +29,7 @@ internal class Program
             )
             .WriteTo.File(
                 new JsonFormatter(),
-                "logs/gameapp-.log",
+                GetLogFilePath(),
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
                 shared: true
@@ -126,6 +126,22 @@ internal class Program
 
         Console.WriteLine("\nThanks for playing Checkers!");
         Console.ReadKey();
+    }
+
+    static string GetLogFilePath()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "GameApp.csproj")))
+            {
+                return Path.Combine(directory.FullName, "logs", "gameapp-.log");
+            }
+
+            directory = directory.Parent;
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "logs", "gameapp-.log");
     }
 
     static void Game_PieceCaptured(object? sender, PieceCapturedEventArgs e)

@@ -7,6 +7,7 @@ using Serilog.Events;
 using Serilog.Formatting.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+string logDirectory = FindProjectDirectory("GameApi.csproj") ?? AppContext.BaseDirectory;
 
 // Setup logging
 Log.Logger = new LoggerConfiguration()
@@ -18,7 +19,7 @@ Log.Logger = new LoggerConfiguration()
     )
     .WriteTo.File(
         new JsonFormatter(),
-        "logs/gameapi-.log",
+        Path.Combine(logDirectory, "logs", "gameapi-.log"),
         rollingInterval: RollingInterval.Day,
         retainedFileCountLimit: 30,
         shared: true
@@ -62,3 +63,19 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+static string? FindProjectDirectory(string projectFileName)
+{
+    DirectoryInfo? directory = new(AppContext.BaseDirectory);
+    while (directory is not null)
+    {
+        if (File.Exists(Path.Combine(directory.FullName, projectFileName)))
+        {
+            return directory.FullName;
+        }
+
+        directory = directory.Parent;
+    }
+
+    return null;
+}
