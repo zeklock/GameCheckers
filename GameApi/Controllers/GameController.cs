@@ -7,56 +7,33 @@ namespace GameApi.Controllers;
 
 [ApiController]
 [Route("api/game")]
-public class GameController : ControllerBase
+public class GameController(IGameService service) : ControllerBase
 {
-    private readonly IGameService _service;
-
-    public GameController(IGameService service)
-    {
-        _service = service;
-    }
-
-    [HttpPost]
-    [Route("start")]
+    [HttpPost("start")]
     public IActionResult Start([FromBody] List<PlayerDto> playerDtos)
     {
-        Result<GameDto> result = _service.Start(playerDtos);
-
-        if (!result.IsSuccess) return BadRequest(result);
-
-        return Ok(result);
+        Result<GameDto> result = service.Start(playerDtos);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpPost]
-    [Route("moves")]
+    [HttpPost("moves")]
     public IActionResult GetAvailableMove([FromBody] PositionDto positionDto)
     {
-        Result<List<List<PositionDto>>> result = _service.GetAvailableMoves(positionDto);
-
-        if (!result.IsSuccess) return BadRequest(result);
-
-        return Ok(result);
+        Result<List<List<PositionDto>>> result = service.GetAvailableMoves(positionDto);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpPost]
-    [Route("move")]
+    [HttpPost("move")]
     public IActionResult Move([FromBody] MoveDto moveDto)
     {
-        Result<GameDto> result = _service.MovePiece(moveDto);
-
-        if (!result.IsSuccess) return BadRequest(result);
-
-        return Ok(result);
+        Result<GameDto> result = service.MovePiece(moveDto);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpGet]
-    [Route("state")]
+    [HttpGet("state")]
     public IActionResult GetState()
     {
-        Result<GameDto> result = _service.GetState();
-
-        if (!result.IsSuccess) return BadRequest(result);
-
-        return Ok(result);
+        Result<GameDto> result = service.GetState();
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

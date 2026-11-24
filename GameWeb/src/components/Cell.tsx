@@ -1,81 +1,70 @@
-import { type PieceDto, type PositionDto } from "../types/game";
-import Piece from "./Piece";
+import type { ReactNode } from "react";
+import type { PositionDto } from "../types/game";
 
-type Props = {
-  cell?: {
-    position: PositionDto;
-    piece?: PieceDto | null;
-  };
-  onClick?: (pos: PositionDto) => void;
-  isSelectable?: boolean;
+type CellProps = {
+  position: PositionDto;
+  isDark: boolean;
   isSelected?: boolean;
+  isSelectable?: boolean;
+  hasPiece?: boolean;
+  onClick?: (pos: PositionDto) => void;
+  children?: ReactNode;
 };
 
 export default function Cell({
-  cell,
+  position,
+  isDark,
+  isSelected = false,
+  isSelectable = false,
+  hasPiece = false,
   onClick,
-  isSelectable,
-  isSelected,
-}: Props) {
-  const { position, piece } = cell || {};
-  const isDark = position ? (position.x + position.y) % 2 === 1 : false;
-
+  children,
+}: CellProps) {
   const handleClick = () => {
-    if (onClick && position) onClick(position);
+    if (onClick) {
+      onClick(position);
+    }
   };
 
-  // Gunakan outline untuk highlight biar ga nambah ukuran cell (no layout shift)
-  let outlineStyle = "none";
-  let outlineColor = "#000000";
-  let outlineWidth = "0";
-  let outlineOffset = "0";
-  let boxShadow = "inset 0 0 8px rgba(0,0,0,0.3)";
-  let background = isDark ? "#8B5A2B" : "#F5DEB3";
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.key === "Enter" || e.key === " ") && onClick) {
+      e.preventDefault();
+      onClick(position);
+    }
+  };
 
+  const colLetter = String.fromCharCode(65 + position.x);
+  const rowNum = position.y + 1;
+  const cellLabel = `Cell ${colLetter}${rowNum}${isDark ? " (dark)" : " (light)"}${isSelected ? " - selected" : ""}${isSelectable ? " - available target" : ""}`;
+
+  // Dynamic state ring / outline classes
+  let stateClasses = "";
   if (isSelected) {
-    outlineStyle = "solid";
-    outlineColor = "#2196f3"; // biru untuk selected
-    outlineWidth = "3px";
-    outlineOffset = "2px";
-    boxShadow = "0 0 12px #64b5f6, inset 0 0 8px rgba(0,0,0,0.3)";
-    background = "#2196f3"; // biru untuk selected
+    stateClasses = "ring-4 ring-blue-500 ring-offset-1 ring-offset-amber-900 z-10 scale-102";
   } else if (isSelectable) {
-    if (piece) {
-      outlineStyle = "solid";
-      outlineColor = "#4caf50"; // hijau untuk piece yang bisa digerakkan
-      outlineWidth = "3px";
-      outlineOffset = "2px";
-      boxShadow = "0 0 10px #81c784, inset 0 0 6px rgba(0,0,0,0.3)";
-      background = "#4caf50"; // hijau untuk piece yang bisa digerakkan
+    if (hasPiece) {
+      stateClasses = "ring-4 ring-emerald-500 ring-offset-1 ring-offset-amber-900 animate-pulse z-10 cursor-pointer";
     } else {
-      outlineStyle = "dashed";
-      outlineColor = "#ff9800"; // oranye dashed untuk target kosong
-      outlineWidth = "3px";
-      outlineOffset = "2px";
-      boxShadow = "0 0 8px #ffb74d";
-      background = "#ff9800"; // oranye dashed untuk target kosong
+      stateClasses = "ring-4 ring-amber-400 ring-dashed ring-offset-1 ring-offset-amber-900 z-10 cursor-pointer";
     }
   }
 
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
-      style={{
-        width: 60,
-        height: 60,
-        background,
-        boxSizing: "border-box",
-        outline: `${outlineWidth} ${outlineStyle} ${outlineColor}`,
-        outlineOffset,
-        boxShadow,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        cursor: onClick ? "pointer" : "default",
-        transition: "all 0.2s ease",
-      }}
+      onKeyDown={handleKeyDown}
+      aria-label={cellLabel}
+      tabIndex={0}
+      className={`
+        w-[60px] h-[60px] flex items-center justify-center p-0 m-0 border-0 outline-none
+        transition-all duration-150 relative select-none
+        focus-visible:ring-4 focus-visible:ring-indigo-400 focus-visible:z-20
+        ${isDark ? "bg-[#8B5A2B] hover:brightness-110" : "bg-[#F5DEB3]"}
+        ${stateClasses}
+      `}
     >
-      {piece && <Piece color={piece.color} type={piece.type} />}
-    </div>
+      {children}
+    </button>
   );
 }

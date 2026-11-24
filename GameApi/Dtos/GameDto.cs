@@ -8,7 +8,7 @@ public class GameDto
     public List<PlayerDto>? Players { get; set; }
     public PlayerDto? CurrentPlayer { get; set; }
     public PlayerDto? Winner { get; set; }
-    public List<AvailablePieceDto>? AvailablePieces { get; set; } = new List<AvailablePieceDto>();
-    public List<string> Notifications { get; set; } = new List<string>();
-    public List<Status> Status { get; set; } = new List<Status>();
+    public List<AvailablePieceDto>? AvailablePieces { get; set; } = [];
+    public List<string> Notifications { get; set; } = [];
+    public List<Status> Status { get; set; } = [];
 }

@@ -2,12 +2,7 @@ using GameBase.Interfaces;
 
 namespace GameBase.Models;
 
-public class Board : IBoard
+public class Board(int size) : IBoard
 {
-    public ICell[,] Cells { get; }
-
-    public Board(int size)
-    {
-        Cells = new Cell[size, size];
-    }
+    public ICell[,] Cells { get; } = new Cell[size, size];
 }

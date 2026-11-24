@@ -13,6 +13,7 @@ export default function KingIcon({ color }: PropsType) {
       height={30}
       viewBox="0 0 24 24"
       fill="none"
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g id="SVGRepo_bgCarrier" strokeWidth="0"></g>

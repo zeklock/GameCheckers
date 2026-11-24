@@ -1,4 +1,4 @@
-﻿using GameBase.Dtos;
+using GameBase.Dtos;
 using GameBase.Enums;
 using GameBase.Interfaces;
 using GameBase.Models;
@@ -10,43 +10,36 @@ namespace GameBase.Tests;
 [TestFixture]
 public class GameControllerTest
 {
-    private GameController _gameController;
-    private IBoard _board;
-    private List<IPlayer> _players;
+    private GameController _gameController = null!;
+    private IBoard _board = null!;
+    private List<IPlayer> _players = null!;
 
     [SetUp]
     public void Setup()
     {
         _board = new Board(GameController.BoardSize);
-        _players = new List<IPlayer>();
+        _players =
+        [
+            new Player(Color.Black, "Player 1"),
+            new Player(Color.White, "Player 2")
+        ];
 
-        Mock<IPlayer> player1 = new Mock<IPlayer>();
-        player1.SetupGet(p => p.Name).Returns("Player 1");
-        player1.SetupGet(p => p.Color).Returns(Color.Black);
-        _players.Add(player1.Object);
-
-        Mock<IPlayer> player2 = new Mock<IPlayer>();
-        player2.SetupGet(p => p.Name).Returns("Player 2");
-        player2.SetupGet(p => p.Color).Returns(Color.White);
-        _players.Add(player2.Object);
-
-        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
+        Mock<ILogger<GameController>> loggerMock = new();
         _gameController = new GameController(_board, _players, loggerMock.Object);
     }
 
     #region Start
     [Test]
-    public void Start_PiecesOnBoard_ShouldBe12()
+    public void Start_WhenGameStarts_PiecesOnBoardShouldBe12()
     {
         // Arrange
-        List<Color> colors = new List<Color> { Color.Black, Color.White };
-        int expectedPieces = 12;
+        const int expectedPieces = 12;
 
         // Act
         _gameController.Start();
         Dictionary<Color, int> actualPieces = _board.Cells
             .Cast<ICell>()
-            .Where(c => c.Piece != null)
+            .Where(c => c.Piece is not null)
             .GroupBy(c => c.Piece!.Color)
             .ToDictionary(g => g.Key, g => g.Count());
 
@@ -62,16 +55,13 @@ public class GameControllerTest
     [TestCase(5)]
     [TestCase(7)]
     [TestCase(11)]
-    public void Start_PiecesOnBoard_ShouldNotLessThan12(int invalidCount)
+    public void Start_WhenGameStarts_PiecesOnBoardNotLessThan12(int invalidCount)
     {
-        // Arrange
-        List<Color> colors = new List<Color> { Color.Black, Color.White };
-
-        // Act
+        // Arrange & Act
         _gameController.Start();
         Dictionary<Color, int> actualPieces = _board.Cells
             .Cast<ICell>()
-            .Where(c => c.Piece != null)
+            .Where(c => c.Piece is not null)
             .GroupBy(c => c.Piece!.Color)
             .ToDictionary(g => g.Key, g => g.Count());
 
@@ -84,16 +74,13 @@ public class GameControllerTest
     [TestCase(13)]
     [TestCase(17)]
     [TestCase(19)]
-    public void Start_PiecesOnBoard_ShouldNotGreaterThan12(int invalidCount)
+    public void Start_WhenGameStarts_PiecesOnBoardNotGreaterThan12(int invalidCount)
     {
-        // Arrange
-        Dictionary<IPlayer, List<IPiece>> playerPieces = _gameController.GetPlayerPieces();
-
-        // Act
+        // Arrange & Act
         _gameController.Start();
         Dictionary<Color, int> actualPieces = _board.Cells
             .Cast<ICell>()
-            .Where(c => c.Piece != null)
+            .Where(c => c.Piece is not null)
             .GroupBy(c => c.Piece!.Color)
             .ToDictionary(g => g.Key, g => g.Count());
 
@@ -103,15 +90,14 @@ public class GameControllerTest
     }
 
     [Test]
-    public void Start_PlayerPieces_ShouldBe12()
+    public void Start_WhenGameStarts_PlayerPiecesShouldBe12()
     {
         // Arrange
-        Dictionary<IPlayer, List<IPiece>> playerPieces = _gameController.GetPlayerPieces();
-        int expectedPieces = 12;
+        const int expectedPieces = 12;
 
         // Act
         _gameController.Start();
-        Dictionary<IPlayer, int> actualPieces = playerPieces
+        Dictionary<IPlayer, int> actualPieces = _gameController.GetPlayerPieces()
             .ToDictionary(g => g.Key, g => g.Value.Count);
 
         // Assert
@@ -128,14 +114,11 @@ public class GameControllerTest
     [TestCase(5)]
     [TestCase(7)]
     [TestCase(11)]
-    public void Start_PlayerPieces_ShouldNotLessThan12(int invalidCount)
+    public void Start_WhenGameStarts_PlayerPiecesNotLessThan12(int invalidCount)
     {
-        // Arrange
-        Dictionary<IPlayer, List<IPiece>> playerPieces = _gameController.GetPlayerPieces();
-
-        // Act
+        // Arrange & Act
         _gameController.Start();
-        Dictionary<IPlayer, int> actualPieces = playerPieces
+        Dictionary<IPlayer, int> actualPieces = _gameController.GetPlayerPieces()
             .ToDictionary(g => g.Key, g => g.Value.Count);
 
         // Assert
@@ -149,14 +132,11 @@ public class GameControllerTest
     [TestCase(13)]
     [TestCase(17)]
     [TestCase(19)]
-    public void Start_PlayerPieces_ShouldNotGreaterThan12(int invalidCount)
+    public void Start_WhenGameStarts_PlayerPiecesNotGreaterThan12(int invalidCount)
     {
-        // Arrange
-        Dictionary<IPlayer, List<IPiece>> playerPieces = _gameController.GetPlayerPieces();
-
-        // Act
+        // Arrange & Act
         _gameController.Start();
-        Dictionary<IPlayer, int> actualPieces = playerPieces
+        Dictionary<IPlayer, int> actualPieces = _gameController.GetPlayerPieces()
             .ToDictionary(g => g.Key, g => g.Value.Count);
 
         // Assert
@@ -169,7 +149,7 @@ public class GameControllerTest
 
     #region CheckWin
     [Test]
-    public void CheckWin_StartGame_WinnerIsNull()
+    public void CheckWin_AtGameStart_WinnerIsNull()
     {
         // Arrange
         _gameController.Start();
@@ -180,17 +160,18 @@ public class GameControllerTest
         // Assert
         Assert.That(_gameController.GetWinner(), Is.Null);
     }
+
     [Test]
-    public void CheckWin_NoMovablePieces_WinnerIsOpponent()
+    public void CheckWin_CurrentPlayerHasNoMovablePieces_OpponentWins()
     {
         // Arrange
-        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
-        Mock<GameController> gameMock = new Mock<GameController>(_board, _players, loggerMock.Object) { CallBase = true };
+        Mock<ILogger<GameController>> loggerMock = new();
+        Mock<GameController> gameMock = new(_board, _players, loggerMock.Object) { CallBase = true };
         IPlayer currentPlayer = gameMock.Object.GetCurrentPlayer();
         IPlayer opponentPlayer = gameMock.Object.GetPlayers().First(p => p != currentPlayer);
         gameMock
             .Setup(g => g.GetMovablePieces(currentPlayer))
-            .Returns(new List<MovablePieceDto>());
+            .Returns([]);
 
         // Act
         gameMock.Object.CheckWin();
@@ -200,15 +181,15 @@ public class GameControllerTest
     }
 
     [Test]
-    public void CheckWin_NoMovablePieces_WinnerIsNotCurrentPlayer()
+    public void CheckWin_CurrentPlayerHasNoMovablePieces_WinnerIsNotCurrentPlayer()
     {
         // Arrange
-        Mock<ILogger<GameController>> loggerMock = new Mock<ILogger<GameController>>();
-        Mock<GameController> gameMock = new Mock<GameController>(_board, _players, loggerMock.Object) { CallBase = true };
+        Mock<ILogger<GameController>> loggerMock = new();
+        Mock<GameController> gameMock = new(_board, _players, loggerMock.Object) { CallBase = true };
         IPlayer currentPlayer = gameMock.Object.GetCurrentPlayer();
         gameMock
             .Setup(g => g.GetMovablePieces(currentPlayer))
-            .Returns(new List<MovablePieceDto>());
+            .Returns([]);
 
         // Act
         gameMock.Object.CheckWin();
@@ -218,7 +199,7 @@ public class GameControllerTest
     }
 
     [Test]
-    public void CheckWin_NoPiecesLeft_WinnerIsOpponent()
+    public void CheckWin_CurrentPlayerHasNoPiecesLeft_OpponentWins()
     {
         // Arrange
         _gameController.Start();
@@ -235,7 +216,7 @@ public class GameControllerTest
     }
 
     [Test]
-    public void CheckWin_NoPiecesLeft_WinnerIsNotCurrentPlayer()
+    public void CheckWin_CurrentPlayerHasNoPiecesLeft_WinnerIsNotCurrentPlayer()
     {
         // Arrange
         _gameController.Start();
@@ -261,17 +242,16 @@ public class GameControllerTest
     [TestCase(Color.White, 3, 2)]
     [TestCase(Color.White, 5, 2)]
     [TestCase(Color.White, 7, 2)]
-    public void GetMovablePieces_StartFrontPiece_ShouldOnList(
+    public void GetMovablePieces_FrontPieceAtGameStart_IsInMovableList(
         Color color, int x, int y
     )
     {
         // Arrange
         IPlayer player = _players.First(p => p.Color == color);
-        Position expectedMovablePiece = new Position(x, y);
+        Position expectedMovablePiece = new(x, y);
 
         // Act
         _gameController.Start();
-
         List<Position> actualMovablePieces = _gameController.GetMovablePieces(player)
             .Select(mp => mp.Position)
             .ToList();
@@ -289,17 +269,16 @@ public class GameControllerTest
     [TestCase(Color.White, 2, 3)]
     [TestCase(Color.White, 4, 3)]
     [TestCase(Color.White, 6, 3)]
-    public void GetMovablePieces_StartBackPiece_ShouldNotOnList(
+    public void GetMovablePieces_BackPieceAtGameStart_IsNotInMovableList(
         Color color, int x, int y
     )
     {
         // Arrange
         IPlayer player = _players.First(p => p.Color == color);
-        Position expectedMovablePiece = new Position(x, y);
+        Position expectedMovablePiece = new(x, y);
 
         // Act
         _gameController.Start();
-
         List<Position> actualMovablePieces = _gameController.GetMovablePieces(player)
             .Select(mp => mp.Position)
             .ToList();
@@ -319,13 +298,13 @@ public class GameControllerTest
     [TestCase(3, 2)]
     [TestCase(5, 2)]
     [TestCase(7, 2)]
-    public void GetLegalMoves_StartFrontPiece_ShouldHaveLegalMoves(
+    public void GetLegalMoves_FrontPieceAtGameStart_ReturnsAvailableMoves(
         int x, int y
     )
     {
         // Arrange
         _gameController.Start();
-        Position position = new Position(x, y);
+        Position position = new(x, y);
         IPiece piece = _gameController.GetPiece(position)!;
 
         // Act
@@ -344,13 +323,13 @@ public class GameControllerTest
     [TestCase(2, 3)]
     [TestCase(4, 3)]
     [TestCase(6, 3)]
-    public void GetLegalMoves_StartBackPiece_ShouldNotHaveLegalMoves(
+    public void GetLegalMoves_BackPieceAtGameStart_ReturnsNoMoves(
         int x, int y
     )
     {
         // Arrange
         _gameController.Start();
-        Position position = new Position(x, y);
+        Position position = new(x, y);
         IPiece piece = _gameController.GetPiece(position)!;
 
         // Act
@@ -365,10 +344,10 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 1)]
     [TestCase(0, 5)]
-    public void GetPiece_ExistingPiece_ShouldReturnPiece(int x, int y)
+    public void GetPiece_ExistingPiecePosition_ReturnsPiece(int x, int y)
     {
         // Arrange
-        Position position = new Position(x, y);
+        Position position = new(x, y);
 
         // Act
         _gameController.Start();
@@ -381,10 +360,10 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 3)]
     [TestCase(0, 4)]
-    public void GetPiece_EmptyCell_ShouldReturnNull(int x, int y)
+    public void GetPiece_EmptyCellPosition_ReturnsNull(int x, int y)
     {
         // Arrange
-        Position position = new Position(x, y);
+        Position position = new(x, y);
 
         // Act
         _gameController.Start();
@@ -399,10 +378,10 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 1)]
     [TestCase(0, 5)]
-    public void IsInside_ValidPosition_ShouldReturnTrue(int x, int y)
+    public void IsInside_CoordinatesWithinBoard_ReturnsTrue(int x, int y)
     {
         // Arrange
-        Position position = new Position(x, y);
+        Position position = new(x, y);
 
         // Act
         bool isInside = GameController.IsInside(position);
@@ -414,10 +393,10 @@ public class GameControllerTest
     [Test]
     [TestCase(0, -1)]
     [TestCase(0, 8)]
-    public void IsInside_InvalidPosition_ShouldReturnFalse(int x, int y)
+    public void IsInside_CoordinatesOutsideBoard_ReturnsFalse(int x, int y)
     {
         // Arrange
-        Position position = new Position(x, y);
+        Position position = new(x, y);
 
         // Act
         bool isInside = GameController.IsInside(position);
@@ -431,14 +410,14 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 5, 1, 4)]
     [TestCase(2, 5, 3, 4)]
-    public void MovePiece_ValidMove_ShouldUpdatePiecePosition(
+    public void MovePiece_ValidDestination_UpdatesBoardPositions(
         int xFrom, int yFrom, int xTo, int yTo
     )
     {
         // Arrange
         _gameController.Start();
-        Position from = new Position(xFrom, yFrom);
-        Position to = new Position(xTo, yTo);
+        Position from = new(xFrom, yFrom);
+        Position to = new(xTo, yTo);
         IPiece piece = _gameController.GetPiece(from)!;
 
         // Act
@@ -452,14 +431,14 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 5, 0, 4)]
     [TestCase(2, 5, 2, 4)]
-    public void MovePiece_InvalidMove_ShouldNotUpdatePiecePosition(
+    public void MovePiece_InvalidDestination_DoesNotUpdatePiecePosition(
         int xFrom, int yFrom, int xTo, int yTo
     )
     {
         // Arrange
         _gameController.Start();
-        Position from = new Position(xFrom, yFrom);
-        Position to = new Position(xTo, yTo);
+        Position from = new(xFrom, yFrom);
+        Position to = new(xTo, yTo);
         IPiece piece = _gameController.GetPiece(from)!;
 
         // Act
@@ -475,14 +454,14 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 5, 1, 4)]
     [TestCase(2, 5, 3, 4)]
-    public void IsValidLegalMove_ValidMove_ShouldReturnTrue(
+    public void IsValidLegalMove_ValidDestination_ReturnsTrue(
         int xFrom, int yFrom, int xTo, int yTo
     )
     {
         // Arrange
-        Position from = new Position(xFrom, yFrom);
-        Position to = new Position(xTo, yTo);
-        List<Position> path = new List<Position> { to };
+        Position from = new(xFrom, yFrom);
+        Position to = new(xTo, yTo);
+        List<Position> path = [to];
 
         _gameController.Start();
         IPiece piece = _gameController.GetPiece(from)!;
@@ -497,14 +476,14 @@ public class GameControllerTest
     [Test]
     [TestCase(0, 5, 0, 4)]
     [TestCase(2, 5, 2, 4)]
-    public void IsValidLegalMove_invalidMove_ShouldReturnFalse(
+    public void IsValidLegalMove_InvalidDestination_ReturnsFalse(
         int xFrom, int yFrom, int xTo, int yTo
     )
     {
         // Arrange
-        Position from = new Position(xFrom, yFrom);
-        Position to = new Position(xTo, yTo);
-        List<Position> path = new List<Position> { to };
+        Position from = new(xFrom, yFrom);
+        Position to = new(xTo, yTo);
+        List<Position> path = [to];
 
         _gameController.Start();
         IPiece piece = _gameController.GetPiece(from)!;

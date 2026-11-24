@@ -74,10 +74,14 @@ export default function Home() {
               {player1IsBlack ? "Player 1 plays Black" : "Player 1 plays White"}
             </label>
 
-            <div
+            <button
+              type="button"
+              role="switch"
+              aria-checked={player1IsBlack}
+              aria-label="Toggle player 1 color"
               onClick={toggleColor}
               className={`
-                relative inline-flex items-center cursor-pointer w-20 h-10 rounded-full transition-all duration-300
+                relative inline-flex items-center cursor-pointer w-20 h-10 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900
                 ${player1IsBlack ? "bg-gray-300 border-2 border-gray-400" : "bg-gray-800 border-2 border-gray-600"}
               `}
             >
@@ -106,7 +110,7 @@ export default function Home() {
                   }
                 ></span>
               </span>
-            </div>
+            </button>
           </div>
 
           {/* Player 2 */}

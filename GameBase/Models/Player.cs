@@ -3,14 +3,8 @@ using GameBase.Interfaces;
 
 namespace GameBase.Models;
 
-public class Player : IPlayer
+public class Player(Color color, string name) : IPlayer
 {
-    public Color Color { get; set; }
-    public string Name { get; set; }
-
-    public Player(Color color, string name)
-    {
-        Color = color;
-        Name = name;
-    }
+    public Color Color { get; set; } = color;
+    public string Name { get; set; } = name;
 }

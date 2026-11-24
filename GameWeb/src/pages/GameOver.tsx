@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { gameApi } from "../api/gameApi";
 import Button from "../components/Button";
 import Cell from "../components/Cell";
+import Piece from "../components/Piece";
 
 export default function GameOver() {
   const [game, setGame] = useState<GameDto | null>(null);
@@ -71,16 +72,12 @@ export default function GameOver() {
 
               {/* Trophy-like accent */}
               <div className="flex items-center justify-center mt-4">
-                <Cell
-                  cell={{
-                    position: { x: 0, y: 0 },
-                    piece: {
-                      color:
-                        winnerColor === "Black" ? Color.Black : Color.White,
-                      type: PieceType.King,
-                    },
-                  }}
-                />
+                <Cell position={{ x: 0, y: 0 }} isDark={true}>
+                  <Piece
+                    color={winnerColor === "Black" ? Color.Black : Color.White}
+                    type={PieceType.King}
+                  />
+                </Cell>
               </div>
             </div>
           ) : (

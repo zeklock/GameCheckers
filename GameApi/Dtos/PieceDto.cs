@@ -2,8 +2,4 @@ using GameBase.Enums;
 
 namespace GameApi.Dtos;
 
-public class PieceDto
-{
-    public Color Color { get; set; }
-    public PieceType Type { get; set; }
-}
+public record PieceDto(Color Color = Color.Black, PieceType Type = PieceType.Man);

@@ -1,55 +1,54 @@
 using GameBase.Interfaces;
 
-namespace Checkers.Views
+namespace GameApp.Views;
+
+public static class BoardRenderer
 {
-    public static class BoardRenderer
+    public static void Render(IBoard board)
     {
-        public static void Render(IBoard board)
+        Console.Clear();
+        Console.WriteLine("\nCheckers Board\n");
+
+        int size = board.Cells.GetLength(0);
+        int centerHeight = CellRenderer.CenterIndex(CellRenderer.Height);
+
+        for (int h = 0; h < CellRenderer.Height; h++)
         {
-            Console.Clear();
-            Console.WriteLine("\nCheckers Board\n");
-
-            int size = board.Cells.GetLength(0);
-            int centerHeight = CellRenderer.CenterIndex(CellRenderer.Height);
-
-            for (int h = 0; h < CellRenderer.Height; h++)
+            for (int x = 0; x < size; x++)
             {
-                for (int x = 0; x < size; x++)
+                if (x == 0)
                 {
-                    if (x == 0)
-                    {
-                        CellRenderer.Row();
-                        Console.Write(" ");
-                    }
-
-                    if (h == centerHeight)
-                    {
-                        CellRenderer.Row((x + 1).ToString());
-                    }
-                    else
-                    {
-                        CellRenderer.Row();
-                    }
-
+                    CellRenderer.Row();
                     Console.Write(" ");
                 }
 
-                Console.WriteLine();
-            }
-
-            for (int y = 0; y < size; y++)
-            {
-                for (int h = 0; h < CellRenderer.Height; h++)
+                if (h == centerHeight)
                 {
-                    for (int x = 0; x < size; x++)
-                    {
-                        CellRenderer.Render(board.Cells[x, y], h);
-                    }
-                    Console.WriteLine("|");
+                    CellRenderer.Row((x + 1).ToString());
                 }
+                else
+                {
+                    CellRenderer.Row();
+                }
+
+                Console.Write(" ");
             }
 
             Console.WriteLine();
         }
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int h = 0; h < CellRenderer.Height; h++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    CellRenderer.Render(board.Cells[x, y], h);
+                }
+                Console.WriteLine("|");
+            }
+        }
+
+        Console.WriteLine();
     }
 }

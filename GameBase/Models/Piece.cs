@@ -3,14 +3,8 @@ using GameBase.Interfaces;
 
 namespace GameBase.Models;
 
-public class Piece : IPiece
+public class Piece(PieceType type, Color color) : IPiece
 {
-    public PieceType Type { get; set; }
-    public Color Color { get; set; }
-
-    public Piece(PieceType type, Color color)
-    {
-        Type = type;
-        Color = color;
-    }
+    public PieceType Type { get; set; } = type;
+    public Color Color { get; set; } = color;
 }

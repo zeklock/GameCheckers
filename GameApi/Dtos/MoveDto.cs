@@ -1,8 +1,3 @@
 namespace GameApi.Dtos;
 
-public class MoveDto
-{
-    public required PieceDto Piece { get; set; }
-    public required PositionDto Position { get; set; }
-    public required List<PositionDto> Path { get; set; }
-}
+public record MoveDto(PieceDto? Piece = null, PositionDto? Position = null, List<PositionDto>? Path = null);

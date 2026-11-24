@@ -4,7 +4,7 @@ using GameBase.Enums;
 using GameBase.Interfaces;
 using GameBase.Models;
 
-namespace Checkers.Views;
+namespace GameApp.Views;
 
 public static class GameRenderer
 {
@@ -56,7 +56,7 @@ public static class GameRenderer
     public static void DisplayMovesAndExecute(GameController gameController, IPiece piece, Position piecePos, List<List<Position>> legalPaths)
     {
         Console.WriteLine($"\nAvailable Moves for Piece at ({piecePos.X + 1},{piecePos.Y + 1}):");
-        Console.WriteLine($"  (0) Back");
+        Console.WriteLine("  (0) Back");
 
         for (int i = 0; i < legalPaths.Count; i++)
         {

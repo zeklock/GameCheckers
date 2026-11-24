@@ -2,7 +2,7 @@ using GameBase;
 using GameBase.Enums;
 using GameBase.Interfaces;
 
-namespace Checkers.Views;
+namespace GameApp.Views;
 
 public static class CellRenderer
 {
@@ -31,7 +31,7 @@ public static class CellRenderer
         Console.BackgroundColor = isCellForPiece
             ? ConsoleColor.DarkGray : ConsoleColor.Gray;
 
-        if (cell.Piece != null && centerRow == heightIndex)
+        if (cell.Piece is not null && centerRow == heightIndex)
         {
             Console.ForegroundColor = cell.Piece.Color == Color.Black
                 ? ConsoleColor.Black : ConsoleColor.White;

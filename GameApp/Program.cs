@@ -1,4 +1,4 @@
-﻿using Checkers.Views;
+using GameApp.Views;
 using GameBase;
 using GameBase.Dtos;
 using GameBase.Enums;
@@ -29,14 +29,14 @@ internal class Program
             )
             .WriteTo.File(
                 new JsonFormatter(),
-                "logs/gameapi-.log",
+                "logs/gameapp-.log",
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: 30,
                 shared: true
             )
             .CreateLogger();
 
-        var serviceProvider = new ServiceCollection()
+        using var serviceProvider = new ServiceCollection()
             .AddLogging(loggingBuilder =>
             {
                 loggingBuilder.ClearProviders();
@@ -64,7 +64,7 @@ internal class Program
             Console.Write("\nSelect Player Combination (1 or 2): ");
 
             if (!int.TryParse(Console.ReadLine(), out _combinationChoice)
-                || _combinationChoice < 0
+                || _combinationChoice < 1
                 || _combinationChoice > 2)
             {
                 Console.WriteLine("\nInvalid selection. Please try again.");
@@ -76,19 +76,19 @@ internal class Program
         }
 
         IBoard board = new Board(GameController.BoardSize);
-        List<IPlayer> players = new List<IPlayer>
-        {
+        List<IPlayer> players =
+        [
             new Player(_combinationChoice == 1 ? Color.Black : Color.White, "Player 1"),
             new Player(_combinationChoice == 1 ? Color.White : Color.Black, "Player 2")
-        };
+        ];
 
-        GameController gameController = new GameController(board, players, logger);
+        GameController gameController = new(board, players, logger);
         gameController.Start();
 
         // Subscribe to events
-        gameController.PieceCaptured += game_PieceCaptured;
-        gameController.PiecePromoted += game_PiecePromoted;
-        gameController.TurnChanged += game_TurnChanged;
+        gameController.PieceCaptured += Game_PieceCaptured;
+        gameController.PiecePromoted += Game_PiecePromoted;
+        gameController.TurnChanged += Game_TurnChanged;
 
         bool isGameRunning = true;
         while (isGameRunning)
@@ -104,7 +104,7 @@ internal class Program
             gameController.CheckWin();
             IPlayer? winner = gameController.GetWinner();
 
-            if (winner != null)
+            if (winner is not null)
             {
                 Console.WriteLine($"\n{winner.Name} ({winner.Color}) WINS!");
                 isGameRunning = false;
@@ -128,19 +128,19 @@ internal class Program
         Console.ReadKey();
     }
 
-    static void game_PieceCaptured(object? sender, PieceCapturedEventArgs e)
+    static void Game_PieceCaptured(object? sender, PieceCapturedEventArgs e)
     {
         Console.WriteLine($"Piece Captured! {e.CapturedPiece.Color} {e.CapturedPiece.Type} ({e.CapturedPosition.X + 1},{e.CapturedPosition.Y + 1}) was removed from the board.");
         Console.ReadKey();
     }
 
-    static void game_PiecePromoted(object? sender, PiecePromotedEventArgs e)
+    static void Game_PiecePromoted(object? sender, PiecePromotedEventArgs e)
     {
         Console.WriteLine($"Piece Promoted! {e.PromotedPiece.Color} piece ({e.PromotedPosition.X + 1},{e.PromotedPosition.Y + 1}) has become a King!");
         Console.ReadKey();
     }
 
-    static void game_TurnChanged(object? sender, TurnChangedEventArgs e)
+    static void Game_TurnChanged(object? sender, TurnChangedEventArgs e)
     {
         Console.WriteLine($"Turn switched to {e.CurrentPlayer.Name} ({e.CurrentPlayer.Color})");
         Console.ReadKey();
