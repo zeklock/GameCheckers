@@ -1,22 +1,20 @@
-# GameApi (.NET 10 Web API) Guidelines
+# GameApi Guidelines
 
-This directory contains the ASP.NET Core 10 Web API backend.
+`GameApi` is an ASP.NET Core 10 Web API (`Microsoft.NET.Sdk.Web`). It references `GameBase` and uses OpenAPI, Scalar, and Serilog.
 
-## Tech Stack
-- ASP.NET Core 10 (`Microsoft.NET.Sdk.Web`), OpenAPI / Scalar, Serilog.
+## Structure and Behavior
+- Keep HTTP concerns in `Controllers/`, game-session coordination and DTO mapping in `Services/GameService.cs`, and the active in-memory game in `Data/GameStore.cs`.
+- Controllers should remain thin. `IGameService` operations return `Result<T>`; controllers return `Ok(result)` for success and `BadRequest(result)` for failure.
+- Current routes are under `api/game`: `POST start`, `POST moves`, `POST move`, and `GET state`.
+- `GameStore` is registered as a singleton and contains one active game for the running API process. Preserve this lifetime and state model unless the task explicitly changes it.
+- The API accepts the frontend's zero-based board coordinates; keep DTO mapping aligned with `GameBase`.
 
-## Official Skills (from dotnet/skills)
-- **`dotnet-aspnetcore`**: Refer to this skill for Web API architecture, middleware pipeline ordering, DI lifetimes, and OpenAPI configuration.
-- **`dotnet`**: Refer to this skill for modern C# conventions, pattern matching, records, and async/await guidelines.
+## Hosting and Logging
+- CORS policy `GameWeb` currently allows `http://localhost:5173`.
+- Serilog is configured in `Program.cs` with JSON console and rolling file sinks. Use the existing `ILogger` integration and structured message templates for relevant events; do not assume that HTTP request logging middleware is enabled.
+- OpenAPI and Scalar UI are mapped only in the Development environment.
 
-## Coding Standards & Rules
-1. **Controller & Service Layer**:
-   - Keep controllers thin in `Controllers/GameController.cs`.
-   - Business logic and session coordination belong in `Services/GameService.cs`.
-2. **Result Pattern**:
-   - Always return `Result<T>` from `GameService`.
-   - Return `BadRequest(result)` on failure, and `Ok(result)` on success.
-3. **CORS & Integration**:
-   - Ensure CORS policy allows requests from the React frontend (`http://localhost:5173`).
-4. **Logging**:
-   - Use Serilog structured logging with JSON formatting for all requests and state changes.
+## Validation
+- Run `dotnet build GameApi/GameApi.csproj` for API changes.
+- Run `dotnet test GameCheckers.sln` when a change affects shared game behavior.
+- Keep this file and the repository-level `AGENTS.md` current when fixing code or changing API behavior, architecture, dependencies, commands, or constraints.

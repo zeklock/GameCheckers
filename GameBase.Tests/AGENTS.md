@@ -1,20 +1,14 @@
-# GameBase.Tests (NUnit Unit Testing) Guidelines
+# GameBase.Tests Guidelines
 
-This directory contains the unit tests for the Checkers game engine.
+`GameBase.Tests` is a .NET 10 NUnit 4 test project for `GameBase`, using Moq and the .NET test SDK.
 
-## Tech Stack
-- .NET 10, NUnit 4, Moq 4, Coverlet collector.
+## Test Practices
+- Follow Arrange-Act-Assert and use descriptive names such as `MethodName_Condition_ExpectedResult`.
+- Prefer real domain objects (`Board`, `Player`, `Piece`, and `Position`) for rule tests. Use Moq for collaborators such as `ILogger<GameController>` or to isolate virtual controller behavior where useful.
+- Existing tests cover controller startup and piece placement, win checks, movable/legal moves, piece lookup, board bounds, and move validation. Do not treat other behavior as covered without adding tests.
+- When changing captures, multi-jump selection, promotion, turns, or win conditions, add focused tests for the changed behavior and important edge cases.
 
-## Official Skills (from dotnet/skills)
-- **`dotnet-test`**: Refer to this skill for Microsoft's unit testing standards, AAA pattern, test naming, and mocking guidelines.
-- **`dotnet`**: Refer to this skill for C# coding standards and assertion idioms.
-
-## Coding Standards & Rules
-1. **Test Structure**:
-   - Follow Arrange-Act-Assert (AAA) pattern.
-   - Name test methods descriptively: `MethodName_Condition_ExpectedResult`.
-2. **Mocking**:
-   - Use Moq to mock `IPlayer` and `ILogger<GameController>` where appropriate.
-   - Do not mock domain entities (`Position`, `Piece`, `Board`).
-3. **Coverage Targets**:
-   - Ensure comprehensive coverage of initial setup, regular moves, jump captures, multi-jump chains, King promotions, and win/loss states.
+## Validation
+- Run `dotnet test GameBase.Tests/GameBase.Tests.csproj` for this project.
+- Run `dotnet test GameCheckers.sln` when validating a shared domain change across the solution.
+- Keep this file and the repository-level `AGENTS.md` current whenever fixing code or changing test tooling, commands, dependencies, or constraints.

@@ -1,17 +1,15 @@
-# GameApp (Console Terminal Application) Guidelines
+# GameApp Guidelines
 
-This directory contains the .NET 10 console client for Checkers.
+`GameApp` is a .NET 10 console client referencing `GameBase`. Its entry point configures logging and runs the terminal game loop.
 
-## Tech Stack
-- .NET 10 Console (`OutputType: Exe`), Serilog, DI (`Microsoft.Extensions.DependencyInjection`).
+## Structure and Behavior
+- Use `GameBase.GameController` for game state, legal moves, captures, promotion, turns, and win checks; do not reimplement game rules in the console client.
+- Types in `Views/` render the board/player information and guide piece/move selection. Keep terminal presentation and input handling there rather than adding domain rules.
+- Preserve the existing one-based coordinates displayed to players while passing the domain's zero-based positions to `GameBase`.
+- Validate console input before using it, and keep invalid selections from terminating the game loop.
 
-## Official Skill (from dotnet/skills)
-- **`dotnet`**: Refer to this skill for core C# coding conventions, primary constructors, and dependency injection patterns.
-
-## Coding Standards & Rules
-1. **Separation of Concerns**:
-   - Renderers in `Views/` must only handle presentation and formatting.
-   - Do not duplicate game rules; rely completely on `GameBase.GameController`.
-2. **Terminal UX**:
-   - Render the board clearly with coordinates and piece indicators.
-   - Handle invalid inputs gracefully without crashing the loop.
+## Logging and Validation
+- Logging is configured with Serilog JSON console and rolling file sinks in `Program.cs`; continue using `ILogger` for domain logging.
+- Build with `dotnet build GameApp/GameApp.csproj`.
+- Run `dotnet test GameCheckers.sln` when a change affects shared game behavior.
+- Keep this file and the repository-level `AGENTS.md` current when fixing code or changing behavior, architecture, dependencies, commands, or constraints.
