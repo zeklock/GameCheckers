@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Color,
-  type GameDto,
-  type MoveDto,
-  type PositionDto,
+import type {
+  GameDto,
+  MoveDto,
+  PositionDto,
 } from "../types/game";
 import { gameApi } from "../api/gameApi";
 import { useGameAudio } from "./useGameAudio";
@@ -112,8 +111,9 @@ export function useCheckersGame() {
           setPaths({});
           setShowNotif(true);
           playSoundByStatus(newGameState.status ?? []);
-        } catch (err: any) {
-          setError(err.message || "Invalid move");
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Invalid move";
+          setError(message);
           setShowError(true);
           playInvalidSound();
         }
@@ -160,8 +160,9 @@ export function useCheckersGame() {
         });
         setSelected(pos);
         setPaths(map);
-      } catch (err: any) {
-        setError(err.message || "No available moves");
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "No available moves";
+        setError(message);
         setShowError(true);
         playInvalidSound();
       }

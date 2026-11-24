@@ -1,6 +1,7 @@
 import {
   Color,
   PieceType,
+  Status,
   type GameDto,
   type MoveDto,
   type PlayerDto,
@@ -10,13 +11,46 @@ import {
 
 const BASE_URL = "http://localhost:5271/api/game";
 
-function mapToGameDto(raw: any): GameDto {
+interface RawPiece {
+  color?: number;
+  type?: number;
+}
+
+interface RawPlayer {
+  name?: string;
+  color?: number;
+}
+
+interface RawCell {
+  position?: { x?: number; y?: number };
+  piece?: RawPiece | null;
+}
+
+interface RawAvailablePiece {
+  position?: { x?: number; y?: number };
+  piece?: RawPiece;
+}
+
+interface RawGame {
+  board?: {
+    size?: number;
+    cells?: RawCell[];
+  };
+  players?: RawPlayer[];
+  currentPlayer?: RawPlayer;
+  winner?: RawPlayer | null;
+  availablePieces?: RawAvailablePiece[];
+  notifications?: string[];
+  status?: Status[];
+}
+
+function mapToGameDto(raw: RawGame): GameDto {
   if (!raw || !raw.board || typeof raw.board.size !== "number") {
     console.error("Invalid game data:", raw);
     throw new Error("Invalid game response structure");
   }
 
-  const toPiece = (p: any): PieceDto | undefined =>
+  const toPiece = (p?: RawPiece | null): PieceDto | undefined =>
     p
       ? {
           color: p.color === 0 ? Color.Black : Color.White,
@@ -24,7 +58,7 @@ function mapToGameDto(raw: any): GameDto {
         }
       : undefined;
 
-  const toPlayer = (p: any): PlayerDto => ({
+  const toPlayer = (p?: RawPlayer | null): PlayerDto => ({
     name: p?.name ?? "Unknown",
     color: p?.color === 0 ? Color.Black : Color.White,
   });
@@ -32,19 +66,21 @@ function mapToGameDto(raw: any): GameDto {
   return {
     board: {
       size: raw.board.size,
-      cells: raw.board.cells.map((c: any) => ({
-        position: {
-          x: Number(c?.position?.x ?? 0),
-          y: Number(c?.position?.y ?? 0),
-        },
-        piece: toPiece(c?.piece),
-      })),
+      cells: Array.isArray(raw.board.cells)
+        ? raw.board.cells.map((c: RawCell) => ({
+            position: {
+              x: Number(c?.position?.x ?? 0),
+              y: Number(c?.position?.y ?? 0),
+            },
+            piece: toPiece(c?.piece),
+          }))
+        : [],
     },
     players: Array.isArray(raw.players) ? raw.players.map(toPlayer) : [],
     currentPlayer: toPlayer(raw.currentPlayer),
     winner: raw.winner ? toPlayer(raw.winner) : undefined,
     availablePieces: Array.isArray(raw.availablePieces)
-      ? raw.availablePieces.map((ap: any) => ({
+      ? raw.availablePieces.map((ap: RawAvailablePiece) => ({
           position: {
             x: Number(ap?.position?.x ?? 0),
             y: Number(ap?.position?.y ?? 0),

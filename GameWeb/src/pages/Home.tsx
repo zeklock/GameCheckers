@@ -32,8 +32,9 @@ export default function Home() {
     try {
       await gameApi.start(players);
       navigate("/game");
-    } catch (err: any) {
-      setError(err.message || "Failed to start the game");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to start the game";
+      setError(message);
     } finally {
       setLoading(false);
     }

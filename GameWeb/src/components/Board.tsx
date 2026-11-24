@@ -30,13 +30,14 @@ export default function Board({
   const keyFor = (pos: PositionDto) => `${pos.x}_${pos.y}`;
 
   // Memoize deterministic cell sorting
+  const cells = board?.cells;
   const sortedCells = useMemo(() => {
-    if (!board?.cells || !Array.isArray(board.cells)) return [];
-    return [...board.cells].sort((a, b) => {
+    if (!cells || !Array.isArray(cells)) return [];
+    return [...cells].sort((a, b) => {
       if (a.position.y !== b.position.y) return a.position.y - b.position.y;
       return a.position.x - b.position.x;
     });
-  }, [board?.cells]);
+  }, [cells]);
 
   if (!board || typeof board.size !== "number" || board.size < 1) {
     return (

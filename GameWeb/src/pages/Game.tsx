@@ -44,7 +44,6 @@ export default function Game() {
   }
 
   const isCurrentBlack = game.currentPlayer.color === Color.Black;
-  const currentTurnText = `${game.currentPlayer.name}'s Turn (${isCurrentBlack ? "Black" : "White"})`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 flex flex-col items-center py-8 px-4">

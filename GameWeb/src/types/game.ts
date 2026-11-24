@@ -1,20 +1,23 @@
-export enum PieceType {
-  Man,
-  King,
-}
+export const PieceType = {
+  Man: 0,
+  King: 1,
+} as const;
+export type PieceType = (typeof PieceType)[keyof typeof PieceType];
 
-export enum Color {
-  Black,
-  White,
-}
+export const Color = {
+  Black: 0,
+  White: 1,
+} as const;
+export type Color = (typeof Color)[keyof typeof Color];
 
-export enum Status {
-  Move,
-  Capture,
-  Promote,
-  GameOver,
-  Invalid = 99,
-}
+export const Status = {
+  Move: 0,
+  Capture: 1,
+  Promote: 2,
+  GameOver: 3,
+  Invalid: 99,
+} as const;
+export type Status = (typeof Status)[keyof typeof Status];
 
 export interface PlayerDto {
   name: string;
