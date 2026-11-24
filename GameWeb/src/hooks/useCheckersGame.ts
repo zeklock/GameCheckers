@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type {
   GameDto,
@@ -23,6 +23,7 @@ export function useCheckersGame() {
   const [error, setError] = useState<string | null>(null);
   const [showNotif, setShowNotif] = useState(false);
   const [showError, setShowError] = useState(false);
+  const moveInFlight = useRef(false);
 
   // Derive selectable pieces directly from game state without redundant syncing
   const selectablePieces = useMemo(() => {
@@ -80,6 +81,7 @@ export function useCheckersGame() {
 
   const selectPiece = useCallback(
     async (pos: PositionDto) => {
+      if (moveInFlight.current) return;
       if (!game || !game.board?.cells) return;
       setError(null);
       const key = keyFor(pos);
@@ -104,6 +106,7 @@ export function useCheckersGame() {
           path: paths[key],
         };
 
+        moveInFlight.current = true;
         try {
           const newGameState = await gameApi.move(move);
           setGame(newGameState);
@@ -116,6 +119,8 @@ export function useCheckersGame() {
           setError(message);
           setShowError(true);
           playInvalidSound();
+        } finally {
+          moveInFlight.current = false;
         }
         return;
       }

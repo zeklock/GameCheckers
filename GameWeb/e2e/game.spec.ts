@@ -1,6 +1,16 @@
 import { expect, test } from "@playwright/test";
 
 test("starts a game and moves a valid black piece", async ({ page }) => {
+  let moveRequestCount = 0;
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      request.url().endsWith("/api/game/move")
+    ) {
+      moveRequestCount++;
+    }
+  });
+
   await page.goto("/");
 
   const names = page.getByPlaceholder("Enter name");
@@ -27,6 +37,7 @@ test("starts a game and moves a valid black piece", async ({ page }) => {
       name: "Black Man",
     }),
   ).toBeVisible();
+  expect(moveRequestCount).toBe(1);
 });
 
 test("rejects players with the same name", async ({ page }) => {

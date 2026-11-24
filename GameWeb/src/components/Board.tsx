@@ -11,10 +11,9 @@ type BoardProps = {
 };
 
 // Target marker for compound composition
-export function MoveTarget({ onClick }: { onClick?: () => void }) {
+export function MoveTarget() {
   return (
     <div
-      onClick={onClick}
       className="w-4 h-4 rounded-full bg-amber-400/90 shadow-md animate-ping"
       aria-hidden="true"
     />
@@ -80,7 +79,7 @@ export default function Board({
             {cell.piece ? (
               <Piece color={cell.piece.color} type={cell.piece.type} />
             ) : isSelectable ? (
-              <MoveTarget onClick={() => onCellClick?.(cell.position)} />
+              <MoveTarget />
             ) : null}
           </Cell>
         );

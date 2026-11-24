@@ -26,13 +26,6 @@ export default function Cell({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.key === "Enter" || e.key === " ") && onClick) {
-      e.preventDefault();
-      onClick(position);
-    }
-  };
-
   const colLetter = String.fromCharCode(65 + position.x);
   const rowNum = position.y + 1;
   const cellLabel = `Cell ${colLetter}${rowNum}${isDark ? " (dark)" : " (light)"}${isSelected ? " - selected" : ""}${isSelectable ? " - available target" : ""}`;
@@ -53,7 +46,6 @@ export default function Cell({
     <button
       type="button"
       onClick={handleClick}
-      onKeyDown={handleKeyDown}
       aria-label={cellLabel}
       tabIndex={0}
       className={`
