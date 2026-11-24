@@ -1,6 +1,20 @@
 import { useCallback, useRef } from "react";
 import { Status } from "../types/game";
 
+const statusSoundMap: Partial<Record<Status, string>> = {
+  [Status.Move]: "/sounds/move.mp3",
+  [Status.Capture]: "/sounds/capture.mp3",
+  [Status.Promote]: "/sounds/promote.mp3",
+  [Status.GameOver]: "/sounds/gameover.mp3",
+};
+
+const soundPriority = [
+  Status.GameOver,
+  Status.Promote,
+  Status.Capture,
+  Status.Move,
+];
+
 export function useGameAudio() {
   const audioCache = useRef<Record<string, HTMLAudioElement>>({});
 
@@ -14,40 +28,42 @@ export function useGameAudio() {
     return audioCache.current[path];
   }, []);
 
+  const stopAllAudio = useCallback(() => {
+    Object.values(audioCache.current).forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+  }, []);
+
   const playSoundByStatus = useCallback(
     (statusList: Status[]) => {
-      const statusSoundMap: Partial<Record<Status, string>> = {
-        [Status.Move]: "/sounds/move.mp3",
-        [Status.Capture]: "/sounds/capture.mp3",
-        [Status.Promote]: "/sounds/promote.mp3",
-        [Status.GameOver]: "/sounds/gameover.mp3",
-      };
+      const selectedStatus = soundPriority.find((status) =>
+        statusList.includes(status),
+      );
+      const path =
+        selectedStatus !== undefined ? statusSoundMap[selectedStatus] : undefined;
+      if (!path) return;
 
-      statusList.forEach((s) => {
-        const path = statusSoundMap[s];
-        if (path) {
-          const audio = getAudio(path);
-          if (audio) {
-            audio.currentTime = 0;
-            audio.play().catch(() => {
-              // Ignore autoplay restrictions
-            });
-          }
-        }
-      });
+      stopAllAudio();
+      const audio = getAudio(path);
+      if (audio) {
+        audio.play().catch(() => {
+          // Ignore autoplay restrictions
+        });
+      }
     },
-    [getAudio],
+    [getAudio, stopAllAudio],
   );
 
   const playInvalidSound = useCallback(() => {
+    stopAllAudio();
     const audio = getAudio("/sounds/invalid.mp3");
     if (audio) {
-      audio.currentTime = 0;
       audio.play().catch(() => {
         // Ignore autoplay restrictions
       });
     }
-  }, [getAudio]);
+  }, [getAudio, stopAllAudio]);
 
   return { playSoundByStatus, playInvalidSound };
 }
